@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/sui-mvr.svg)](https://crates.io/crates/sui-mvr)
 [![Documentation](https://docs.rs/sui-mvr/badge.svg)](https://docs.rs/sui-mvr)
 [![License](https://img.shields.io/crates/l/sui-mvr.svg)](https://github.com/Bralekfn/sui-mvr-rust/blob/main/LICENSE)
-[![Build Status](https://github.com/Bralekfn/sui-mvr-rust/workflows/CI/badge.svg)](https://github.com/Bralekfn/sui-mvr-rust/actions)
+[![Build Status](https://github.com/Bralekfn/sui-mvr-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/Bralekfn/sui-mvr-rust/actions)
 [![Coverage](https://codecov.io/gh/Bralekfn/sui-mvr-rust/branch/main/graph/badge.svg)](https://codecov.io/gh/Bralekfn/sui-mvr-rust)
 
 **The first Rust implementation of the Move Registry (MVR) plugin for the Sui blockchain.**
