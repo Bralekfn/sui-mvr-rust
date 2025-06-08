@@ -1,0 +1,119 @@
+[package]
+name = "sui-mvr"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "Move Registry (MVR) plugin for Sui Rust SDK - resolve human-readable package names to addresses"
+license = "Apache-2.0"
+repository = "https://github.com/Bralekfn/sui-mvr-rust"
+homepage = "https://github.com/Bralekfn/sui-mvr-rust"
+documentation = "https://github.com/Bralekfn/sui-mvr-rust"
+keywords = ["sui", "mvr", "blockchain", "move-registry", "web3"]
+categories = ["api-bindings", "development-tools", "web-programming"]
+readme = "README.md"
+rust-version = "1.70"
+exclude = [
+    ".github/*",
+    "benches/*",
+    "tests/fixtures/*",
+    "docs/*",
+    "*.md",
+    "!README.md",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+# HTTP client for API requests
+reqwest = { version = "0.11", features = ["json", "stream"] }
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+thiserror = "1.0"
+
+# Future utilities for concurrent operations
+futures = "0.3"
+
+# Optional dependencies for specific features
+tracing = { version = "0.1", optional = true }
+tracing-subscriber = { version = "0.3", optional = true }
+
+[dev-dependencies]
+# Testing utilities
+tokio-test = "0.4"
+criterion = { version = "0.5", features = ["html_reports"] }
+mockito = "1.2"
+tempfile = "3.8"
+
+# Additional test utilities
+futures = "0.3"
+serde_json = "1.0"
+
+[features]
+default = []
+
+# Feature for detailed logging and tracing
+tracing = ["dep:tracing", "dep:tracing-subscriber"]
+
+# Feature for static resolution (similar to @mysten/mvr-static)
+static-resolution = []
+
+# Feature for additional metrics and monitoring
+metrics = []
+
+# Feature for WebAssembly support
+wasm = ["reqwest/wasm"]
+
+[[example]]
+name = "basic_usage"
+required-features = []
+
+[[example]]
+name = "with_overrides"
+required-features = []
+
+[[example]]
+name = "batch_operations"
+required-features = []
+
+[[bench]]
+name = "resolver_bench"
+harness = false
+required-features = []
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level = 0
+debug = true
+overflow-checks = true
+
+[profile.test]
+opt-level = 1
+debug = true
+
+# Documentation configuration
+[package.metadata.docs.rs]
+features = ["tracing", "metrics"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+# Cargo.toml metadata for better discoverability
+[package.metadata]
+maintenance = { status = "actively-developed" }
+
+# Minimum supported Rust version
+[package.metadata.msrv]
+msrv = "1.70.0"
