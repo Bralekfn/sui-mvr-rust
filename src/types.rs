@@ -111,6 +111,7 @@ impl MvrOverrides {
 
 /// MVR API response structure for package resolution
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)] // These fields are for future API parsing
 pub(crate) struct MvrPackageResponse {
     pub package_id: Option<String>,
     pub address: Option<String>,
@@ -120,6 +121,7 @@ pub(crate) struct MvrPackageResponse {
 
 /// MVR API response structure for type resolution
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)] // These fields are for future API parsing
 pub(crate) struct MvrTypeResponse {
     pub type_signature: Option<String>,
     pub package_id: Option<String>,
@@ -136,6 +138,7 @@ pub(crate) struct BatchResolutionRequest {
 
 /// Batch resolution response
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)] // Error field is for future error handling
 pub(crate) struct BatchResolutionResponse {
     pub packages: Option<HashMap<String, String>>,
     pub types: Option<HashMap<String, String>>,

@@ -419,9 +419,9 @@ impl MvrResolver {
                 .map(|s| s.to_string())
                 .ok_or_else(|| {
                     MvrError::JsonError(
-                        serde_json::from_str::<serde_json::Value>(&format!(
-                            r#"{{"error": "Address not found in response"}}"#
-                        ))
+                        serde_json::from_str::<serde_json::Value>(
+                            r#"{"error": "Address not found in response"}"#
+                        )
                         .unwrap_err(),
                     )
                 })
@@ -437,62 +437,12 @@ impl MvrResolver {
             .map(|s| s.to_string())
             .ok_or_else(|| {
                 MvrError::JsonError(
-                    serde_json::from_str::<serde_json::Value>(&format!(
-                        r#"{{"error": "Type signature not found in response"}}"#
-                    ))
+                    serde_json::from_str::<serde_json::Value>(
+                        r#"{"error": "Type signature not found in response"}"#
+                    )
                     .unwrap_err(),
                 )
             })
-    }
-}
-
-/// Helper trait to extend transaction builders with MVR support
-pub trait MvrTransactionExt {
-    /// Create a move call using MVR package names
-    fn move_call_mvr<'a>(
-        &'a mut self,
-        resolver: &'a MvrResolver,
-        target: &'a str,
-        arguments: Vec<serde_json::Value>,
-        type_arguments: Vec<&'a str>,
-    ) -> impl std::future::Future<Output = MvrResult<()>> + 'a;
-}
-
-// Note: This would be implemented for the actual Sui SDK transaction builder
-// For now, this is a conceptual implementation
-impl MvrTransactionExt for serde_json::Value {
-    async fn move_call_mvr(
-        &mut self,
-        resolver: &MvrResolver,
-        target: &str,
-        _arguments: Vec<serde_json::Value>,
-        type_arguments: Vec<&str>,
-    ) -> MvrResult<()> {
-        // Parse target to extract package name if it starts with @
-        let resolved_target = if target.starts_with('@') {
-            resolve_mvr_target(resolver, target).await?
-        } else {
-            target.to_string()
-        };
-
-        // Resolve type arguments
-        let mut resolved_type_args = Vec::new();
-        for type_arg in type_arguments {
-            if type_arg.starts_with('@') {
-                let resolved = resolver.resolve_type(type_arg).await?;
-                resolved_type_args.push(resolved);
-            } else {
-                resolved_type_args.push(type_arg.to_string());
-            }
-        }
-
-        // Store resolved values (in a real implementation, this would call the actual Sui SDK)
-        *self = serde_json::json!({
-            "target": resolved_target,
-            "type_arguments": resolved_type_args
-        });
-
-        Ok(())
     }
 }
 
