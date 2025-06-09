@@ -1,5 +1,3 @@
-use std::fmt;
-
 /// Error types for MVR operations
 #[derive(Debug, thiserror::Error)]
 pub enum MvrError {
@@ -55,12 +53,12 @@ pub enum MvrError {
 impl MvrError {
     /// Check if the error is retryable
     pub fn is_retryable(&self) -> bool {
-        matches!(
-            self,
-            MvrError::HttpError(_) |
-            MvrError::Timeout { .. } |
-            MvrError::ServerError { status_code, .. } if *status_code >= 500
-        )
+        match self {
+            MvrError::HttpError(_) => true,
+            MvrError::Timeout { .. } => true,
+            MvrError::ServerError { status_code, .. } => *status_code >= 500,
+            _ => false,
+        }
     }
 
     /// Check if the error is due to rate limiting
@@ -70,14 +68,14 @@ impl MvrError {
 
     /// Check if the error is a client error (4xx)
     pub fn is_client_error(&self) -> bool {
-        matches!(
-            self,
-            MvrError::PackageNotFound(_) |
-            MvrError::TypeNotFound(_) |
-            MvrError::InvalidPackageName(_) |
-            MvrError::InvalidTypeName(_) |
-            MvrError::ServerError { status_code, .. } if *status_code >= 400 && *status_code < 500
-        )
+        match self {
+            MvrError::PackageNotFound(_) => true,
+            MvrError::TypeNotFound(_) => true,
+            MvrError::InvalidPackageName(_) => true,
+            MvrError::InvalidTypeName(_) => true,
+            MvrError::ServerError { status_code, .. } => *status_code >= 400 && *status_code < 500,
+            _ => false,
+        }
     }
 
     /// Get retry delay for retryable errors

@@ -11,7 +11,7 @@ documentation = "https://docs.rs/sui-mvr"
 keywords = ["sui", "mvr", "blockchain", "move-registry", "web3"]
 categories = ["api-bindings", "development-tools", "web-programming"]
 readme = "README.md"
-rust-version = "1.75"
+rust-version = "1.82"
 exclude = [
     ".github/*",
     "benches/*",
@@ -112,4 +112,4 @@ maintenance = { status = "actively-developed" }
 
 # Minimum supported Rust version
 [package.metadata.msrv]
-msrv = "1.75.0"
+msrv = "1.82.0"

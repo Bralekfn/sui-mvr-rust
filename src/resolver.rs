@@ -5,7 +5,6 @@ use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
-use tokio::time::Duration;
 
 /// Main MVR resolver for Rust Sui SDK
 #[derive(Clone)]
@@ -419,7 +418,12 @@ impl MvrResolver {
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string())
                 .ok_or_else(|| {
-                    MvrError::JsonError(serde_json::Error::custom("Address not found in response"))
+                    MvrError::JsonError(
+                        serde_json::from_str::<serde_json::Value>(&format!(
+                            r#"{{"error": "Address not found in response"}}"#
+                        ))
+                        .unwrap_err(),
+                    )
                 })
         }
     }
@@ -432,9 +436,12 @@ impl MvrResolver {
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
             .ok_or_else(|| {
-                MvrError::JsonError(serde_json::Error::custom(
-                    "Type signature not found in response",
-                ))
+                MvrError::JsonError(
+                    serde_json::from_str::<serde_json::Value>(&format!(
+                        r#"{{"error": "Type signature not found in response"}}"#
+                    ))
+                    .unwrap_err(),
+                )
             })
     }
 }
@@ -511,7 +518,6 @@ pub async fn resolve_mvr_target(resolver: &MvrResolver, target: &str) -> MvrResu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio::time::Duration;
 
     #[test]
     fn test_resolver_creation() {

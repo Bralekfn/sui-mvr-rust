@@ -192,7 +192,8 @@ impl CacheStats {
         if self.total_hits == 0 {
             0.0
         } else {
-            self.total_hits as f64 / (self.total_hits + self.total_entries) as f64
+            // Fixed: Convert total_entries to u64 to match total_hits type
+            self.total_hits as f64 / (self.total_hits + self.total_entries as u64) as f64
         }
     }
 }

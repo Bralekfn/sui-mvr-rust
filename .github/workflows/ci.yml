@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust: [stable, beta, 1.75.0]  # Updated MSRV
+        rust: [stable, beta, 1.82.0]  # Updated MSRV to match dependency requirements
     
     steps:
     - name: Checkout sources
@@ -161,14 +161,3 @@ jobs:
         
     - name: Run benchmarks
       run: cargo bench --no-run  # Just check that benchmarks compile
-      
-    # Uncomment if you want to run actual benchmarks and store results
-    # - name: Run and store benchmark results
-    #   run: |
-    #     cargo bench | tee benchmark_results.txt
-    #     
-    # - name: Store benchmark result
-    #   uses: benchmark-action/github-action-benchmark@v1
-    #   with:
-    #     tool: 'cargo'
-    #     output-file-path: benchmark_results.txt
