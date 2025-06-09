@@ -29,17 +29,18 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 # HTTP client for API requests
-reqwest = { version = "0.11", features = ["json", "stream"] }
+reqwest = { version = "0.12.19", features = ["json", "stream"] }
 
 # Async runtime
 tokio = { version = "1.0", features = ["full"] }
 
 # Serialization
+bcs = { version = "0.1", optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Error handling
-thiserror = "1.0"
+thiserror = "2.0.12"
 
 # Future utilities for concurrent operations
 futures = "0.3"
@@ -48,13 +49,10 @@ futures = "0.3"
 tracing = { version = "0.1", optional = true }
 tracing-subscriber = { version = "0.3", optional = true }
 
-# Official Sui SDK integration (optional feature)
-sui-sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk", optional = true }
-
 [dev-dependencies]
 # Testing utilities
 tokio-test = "0.4"
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.6.0", features = ["html_reports"] }
 mockito = "1.2"
 tempfile = "3.8"
 anyhow = "1.0"
@@ -82,7 +80,7 @@ metrics = []
 wasm = []
 
 # Feature for Sui SDK integration
-sui-integration = ["dep:sui-sdk"]
+sui-integration = ["dep:bcs"]
 
 [[example]]
 name = "basic_usage"

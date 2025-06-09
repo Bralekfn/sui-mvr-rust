@@ -84,8 +84,8 @@ pub use cache::CacheStats;
 
 /// Commonly used items for easy importing
 pub mod prelude {
-    pub use super::{MvrConfig, MvrError, MvrOverrides, MvrResolver, CacheStats};
-    
+    pub use super::{CacheStats, MvrConfig, MvrError, MvrOverrides, MvrResolver};
+
     // Re-export Sui integration when feature is enabled
     #[cfg(feature = "sui-integration")]
     pub use super::sui_integration::MvrResolverExt;
@@ -106,18 +106,18 @@ mod integration_tests {
         // Test that basic resolver creation works
         let resolver = MvrResolver::testnet();
         assert!(resolver.config().endpoint_url.contains("testnet"));
-        
+
         let resolver = MvrResolver::mainnet();
         assert!(resolver.config().endpoint_url.contains("mainnet"));
     }
 
     #[tokio::test]
     async fn test_overrides_integration() {
-        let overrides = MvrOverrides::new()
-            .with_package("@test/pkg".to_string(), "0x123".to_string());
-        
+        let overrides =
+            MvrOverrides::new().with_package("@test/pkg".to_string(), "0x123".to_string());
+
         let resolver = MvrResolver::testnet().with_overrides(overrides);
-        
+
         let result = resolver.resolve_package("@test/pkg").await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "0x123");
@@ -126,31 +126,41 @@ mod integration_tests {
     #[tokio::test]
     async fn test_error_handling() {
         let resolver = MvrResolver::testnet();
-        
+
         // Test invalid package name
         let result = resolver.resolve_package("invalid-name").await;
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), MvrError::InvalidPackageName(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            MvrError::InvalidPackageName(_)
+        ));
     }
 
     #[cfg(feature = "sui-integration")]
     #[tokio::test]
     async fn test_sui_integration_compilation() {
         use crate::sui_integration::MvrResolverExt;
-        
+
         // Test that Sui integration compiles correctly
-        let overrides = MvrOverrides::new()
-            .with_package("@test/pkg".to_string(), "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234".to_string());
-        
+        let overrides = MvrOverrides::new().with_package(
+            "@test/pkg".to_string(),
+            "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234".to_string(),
+        );
+
         let resolver = MvrResolver::testnet().with_overrides(overrides);
-        
+
         // Test MVR target resolution
-        let result = resolver.resolve_mvr_target("@test/pkg::module::function").await;
+        let result = resolver
+            .resolve_mvr_target("@test/pkg::module::function")
+            .await;
         assert!(result.is_ok());
-        
+
         let (package_id, module, function) = result.unwrap();
         assert_eq!(module, "module");
         assert_eq!(function, "function");
-        assert_eq!(package_id.to_hex_literal(), "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234");
+        assert_eq!(
+            package_id.to_hex_literal(),
+            "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234"
+        );
     }
 }

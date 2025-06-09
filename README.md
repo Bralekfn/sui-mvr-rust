@@ -10,6 +10,19 @@
 
 Transform cryptic package addresses into human-readable names in your Rust applications. No more copy-pasting `0x80d7de9c4a56194087e0ba0bf59492aa8e6a5ee881606226930827085ddf2332` - just use `@suifrens/core`!
 
+### **🆕 Integration with Official Sui SDK**
+
+For building transactions with human-readable package names:
+
+```toml
+[dependencies]
+sui-mvr-rust = { version = "0.1.0", features = ["sui-integration"] }
+# Sui SDK must be added manually (not available on crates.io)
+sui-sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk" }
+tokio = { version = "1.2", features = ["full"] }
+anyhow = "1.0"
+```
+
 ## 🚧 Current Status
 
 **Early Release (v0.1.0)** - This is the first Rust implementation of MVR for Sui. Core functionality is stable and tested.

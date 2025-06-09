@@ -5,8 +5,9 @@
 #[cfg(feature = "sui-integration")]
 mod sui_integration_tests {
     use anyhow::Result;
+    use std::str::FromStr;
     use sui_mvr::prelude::*;
-    use sui_mvr::sui_integration::{MvrResolverExt, utils};
+    use sui_mvr::sui_integration::{utils, MvrResolverExt};
     use sui_sdk::{
         types::{
             base_types::{ObjectID, SuiAddress},
@@ -16,7 +17,6 @@ mod sui_integration_tests {
         },
         SuiClientBuilder,
     };
-    use std::str::FromStr;
 
     fn create_test_resolver_with_real_addresses() -> MvrResolver {
         // Use realistic Sui mainnet addresses for testing
@@ -45,11 +45,14 @@ mod sui_integration_tests {
     async fn test_sui_client_integration() -> Result<()> {
         // Test that we can connect to Sui testnet
         let sui_client = SuiClientBuilder::default().build_testnet().await?;
-        
+
         // Verify connection
         let version = sui_client.api_version();
-        assert!(!version.is_empty(), "Should get API version from Sui client");
-        
+        assert!(
+            !version.is_empty(),
+            "Should get API version from Sui client"
+        );
+
         println!("✅ Connected to Sui testnet, API version: {}", version);
         Ok(())
     }
@@ -210,7 +213,7 @@ mod sui_integration_tests {
         // Test create_pure_arg utility
         let amount = 1000u64;
         let pure_arg = utils::create_pure_arg(&amount)?;
-        
+
         // Verify it's a Pure CallArg
         match pure_arg {
             sui_sdk::types::transaction::CallArg::Pure(bytes) => {
@@ -229,7 +232,7 @@ mod sui_integration_tests {
 
         let batch_ptb = utils::create_batch_transaction(&resolver, &calls).await?;
         let batch_tx = batch_ptb.finish();
-        
+
         assert_eq!(batch_tx.commands.len(), 2);
         for command in &batch_tx.commands {
             assert!(matches!(command, Command::MoveCall(_)));
@@ -252,8 +255,12 @@ mod sui_integration_tests {
 
         for invalid_target in invalid_targets {
             let result = resolver.resolve_mvr_target(invalid_target).await;
-            assert!(result.is_err(), "Should reject invalid target: {}", invalid_target);
-            
+            assert!(
+                result.is_err(),
+                "Should reject invalid target: {}",
+                invalid_target
+            );
+
             if let Err(e) = result {
                 assert!(matches!(e, MvrError::InvalidPackageName(_)));
             }
@@ -269,7 +276,7 @@ mod sui_integration_tests {
                 vec![],
             )
             .await;
-        
+
         assert!(result.is_err(), "Should fail for non-existent package");
 
         println!("✅ Error handling integration successful");
@@ -283,7 +290,7 @@ mod sui_integration_tests {
         // Test that ObjectID conversion works correctly
         let package_address = resolver.resolve_package("@sui/framework").await?;
         let object_id = ObjectID::from_hex_literal(&package_address)?;
-        
+
         // Verify round-trip conversion
         let hex_literal = object_id.to_hex_literal();
         assert_eq!(hex_literal, package_address);
@@ -292,7 +299,7 @@ mod sui_integration_tests {
         let test_address = "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234";
         let sui_address = SuiAddress::from_str(test_address)?;
         let address_bytes = bcs::to_bytes(&sui_address)?;
-        
+
         // Verify the address can be used in CallArg::Pure
         let _pure_arg = sui_sdk::types::transaction::CallArg::Pure(address_bytes);
 
@@ -323,7 +330,7 @@ mod sui_integration_tests {
 
         // Batch should typically be faster for multiple resolutions
         // (though with overrides/cache, the difference might be minimal)
-        
+
         println!("✅ Performance testing with Sui integration successful");
         Ok(())
     }
@@ -340,17 +347,17 @@ mod sui_integration_tests {
         // Step 1: Resolve packages
         let packages = vec!["@sui/framework", "@defi/pool"];
         let resolved = resolver.resolve_packages_as_object_ids(&packages).await?;
-        
+
         // Step 2: Build transaction using resolved packages
         let mut ptb = ProgrammableTransactionBuilder::new();
-        
+
         for (package_name, package_id) in resolved {
             let (module, function) = match package_name.as_str() {
                 "@sui/framework" => ("coin", "mint"),
                 "@defi/pool" => ("liquidity", "add"),
                 _ => continue,
             };
-            
+
             let move_call = ProgrammableMoveCall {
                 package: package_id,
                 module: Identifier::new(module)?,
@@ -364,7 +371,7 @@ mod sui_integration_tests {
         // Step 3: Verify transaction
         let tx = ptb.finish();
         assert_eq!(tx.commands.len(), 2);
-        
+
         // Verify each command is a MoveCall
         for command in &tx.commands {
             assert!(matches!(command, Command::MoveCall(_)));
@@ -383,15 +390,15 @@ mod basic_tests {
 
     #[tokio::test]
     async fn test_basic_functionality_without_sui_integration() {
-        let overrides = MvrOverrides::new()
-            .with_package("@test/package".to_string(), "0x123456".to_string());
-        
+        let overrides =
+            MvrOverrides::new().with_package("@test/package".to_string(), "0x123456".to_string());
+
         let resolver = MvrResolver::testnet().with_overrides(overrides);
-        
+
         let result = resolver.resolve_package("@test/package").await;
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "0x123456");
-        
+
         println!("✅ Basic functionality works without sui-integration feature");
     }
 }
