@@ -89,6 +89,7 @@ impl MvrCache {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn remove(&self, key: &str) -> MvrResult<Option<String>> {
         let mut entries = self
             .entries
