@@ -170,6 +170,15 @@ mod tests {
     }
 
     #[test]
+    fn test_mvr_config_clone() {
+        let config = MvrConfig::mainnet();
+        let cloned_config = config.clone();
+        
+        assert_eq!(config.endpoint_url, cloned_config.endpoint_url);
+        assert_eq!(config.cache_ttl, cloned_config.cache_ttl);
+    }
+
+    #[test]
     fn test_mvr_overrides() {
         let overrides = MvrOverrides::new()
             .with_package("@test/package".to_string(), "0x123".to_string())
@@ -177,6 +186,15 @@ mod tests {
         
         assert_eq!(overrides.packages.len(), 1);
         assert_eq!(overrides.types.len(), 1);
+    }
+
+    #[test]
+    fn test_mvr_overrides_clone() {
+        let overrides = MvrOverrides::new()
+            .with_package("@test/package".to_string(), "0x123".to_string());
+        
+        let cloned_overrides = overrides.clone();
+        assert_eq!(overrides.packages, cloned_overrides.packages);
     }
 
     #[test]

@@ -8,10 +8,11 @@ use tokio::sync::Semaphore;
 use tokio::time::Duration;
 
 /// Main MVR resolver for Rust Sui SDK
+#[derive(Clone)]
 pub struct MvrResolver {
     config: MvrConfig,
     client: Client,
-    cache: MvrCache,
+    cache: Arc<MvrCache>,
     semaphore: Arc<Semaphore>,
 }
 
@@ -24,7 +25,7 @@ impl MvrResolver {
             .build()
             .expect("Failed to create HTTP client");
 
-        let cache = MvrCache::new(config.cache_ttl, 1000); // Default max 1000 entries
+        let cache = Arc::new(MvrCache::new(config.cache_ttl, 1000)); // Default max 1000 entries
         let semaphore = Arc::new(Semaphore::new(config.max_concurrent_requests));
 
         Self {
@@ -513,5 +514,15 @@ mod tests {
         
         let results = resolver.resolve_types(&[]).await.unwrap();
         assert!(results.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_clone_resolver() {
+        let resolver = MvrResolver::testnet();
+        let cloned_resolver = resolver.clone();
+        
+        // Both should work
+        assert!(resolver.config().endpoint_url.contains("testnet"));
+        assert!(cloned_resolver.config().endpoint_url.contains("testnet"));
     }
 }

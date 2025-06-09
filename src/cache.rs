@@ -35,7 +35,7 @@ impl CacheEntry {
 }
 
 /// In-memory cache for MVR resolutions
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct MvrCache {
     entries: Arc<Mutex<HashMap<String, CacheEntry>>>,
     default_ttl: Duration,
@@ -277,5 +277,17 @@ mod tests {
         
         let stats = cache.stats().unwrap();
         assert_eq!(stats.total_entries, 0);
+    }
+
+    #[test]
+    fn test_cache_clone() {
+        let cache = MvrCache::new(Duration::from_secs(1), 10);
+        let cloned_cache = cache.clone();
+        
+        // Insert in original
+        cache.insert("key1".to_string(), "value1".to_string()).unwrap();
+        
+        // Should be accessible from clone (shared Arc)
+        assert_eq!(cloned_cache.get("key1"), Some("value1".to_string()));
     }
 }
