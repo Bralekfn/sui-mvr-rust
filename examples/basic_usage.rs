@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Resolve a package name to address
     match resolver.resolve_package("@suifrens/core").await {
-        Ok(address) => println!("✓ SuiFrens core package: {}", address),
+        Ok(address) => println!("✓ SuiFrens core package: {address}"),
         Err(e) => println!("✗ Failed to resolve SuiFrens core: {}", e),
     }
 

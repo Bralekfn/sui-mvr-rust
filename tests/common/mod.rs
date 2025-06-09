@@ -107,13 +107,11 @@ pub fn valid_type_names() -> Vec<&'static str> {
 pub fn assert_valid_address(address: &str) {
     assert!(
         address.starts_with("0x"),
-        "Address should start with 0x: {}",
-        address
+        "Address should start with 0x: {address}"
     );
     assert!(
         address.len() >= 3,
-        "Address should be longer than just 0x: {}",
-        address
+        "Address should be longer than just 0x: {address}"
     );
 
     // Check that the rest are valid hex characters

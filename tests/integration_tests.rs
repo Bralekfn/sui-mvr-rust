@@ -124,8 +124,7 @@ async fn test_package_name_validation() {
         let result = resolver.resolve_package(invalid_name).await;
         assert!(
             result.is_err(),
-            "Should reject invalid package name: {}",
-            invalid_name
+            "Should reject invalid package name: {invalid_name}"
         );
 
         if let Err(e) = result {
@@ -169,8 +168,7 @@ async fn test_type_name_validation() {
         let result = resolver.resolve_type(invalid_type).await;
         assert!(
             result.is_err(),
-            "Should reject invalid type name: {}",
-            invalid_type
+            "Should reject invalid type name: {invalid_type}",
         );
 
         if let Err(e) = result {
