@@ -72,7 +72,7 @@ static-resolution = []
 metrics = []
 
 # Feature for WebAssembly support - using js feature instead of wasm
-wasm = ["reqwest/js"]
+wasm = []
 
 [[example]]
 name = "basic_usage"
