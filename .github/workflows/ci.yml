@@ -23,14 +23,13 @@ jobs:
       uses: actions/checkout@v4
     
     - name: Install Rust toolchain
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ matrix.rust }}
         components: rustfmt, clippy
-        override: true
         
     - name: Cache dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/registry
@@ -67,26 +66,18 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Install Rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-        components: llvm-tools-preview
-    
+      uses: dtolnay/rust-toolchain@stable
+        
     - name: Install cargo-tarpaulin
-      uses: actions-rs/install@v0.1
-      with:
-        crate: cargo-tarpaulin
-        version: latest
+      run: cargo install cargo-tarpaulin
       
     - name: Generate coverage report
-      run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out xml
+      run: cargo tarpaulin --all-features --out xml
       
-    - name: Upload to codecov.io
-      uses: codecov/codecov-action@v3
-      with:
-        file: cobertura.xml
-        fail_ci_if_error: true
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   security:
     name: Security Audit
@@ -97,15 +88,13 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Install Rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: Install cargo-audit
+      run: cargo install cargo-audit
         
     - name: Run security audit
-      uses: actions-rs/audit-check@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+      run: cargo audit
 
   docs:
     name: Documentation
@@ -116,10 +105,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Install Rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
+      uses: dtolnay/rust-toolchain@stable
         
     - name: Check documentation
       run: cargo doc --no-deps --all-features
@@ -135,10 +121,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Install Rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
+      uses: dtolnay/rust-toolchain@stable
         
     - name: Check if publishable
       run: cargo publish --dry-run
@@ -154,10 +137,7 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Install Rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
+      uses: dtolnay/rust-toolchain@stable
         
     - name: Run benchmarks
       run: cargo bench --no-run  # Just check that benchmarks compile
