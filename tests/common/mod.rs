@@ -119,8 +119,7 @@ pub fn assert_valid_address(address: &str) {
     for c in hex_part.chars() {
         assert!(
             c.is_ascii_hexdigit(),
-            "Invalid hex character in address: {}",
-            address
+            "Invalid hex character in address: {address}"
         );
     }
 }
@@ -129,8 +128,7 @@ pub fn assert_valid_address(address: &str) {
 pub fn assert_valid_type_signature(type_sig: &str) {
     assert!(
         type_sig.contains("::"),
-        "Type signature should contain :: separator: {}",
-        type_sig
+        "Type signature should contain :: separator: {type_sig}"
     );
 
     // Should start with 0x address
@@ -142,8 +140,7 @@ pub fn assert_valid_type_signature(type_sig: &str) {
     let parts: Vec<&str> = type_sig.split("::").collect();
     assert!(
         parts.len() >= 3,
-        "Type signature should have at least address::module::Type: {}",
-        type_sig
+        "Type signature should have at least address::module::Type: {type_sig}"
     );
 }
 
@@ -156,14 +153,12 @@ pub fn test_error_properties(
     assert_eq!(
         error.is_retryable(),
         expected_retryable,
-        "Error retryable property mismatch for: {:?}",
-        error
+        "Error retryable property mismatch for: {error:?}"
     );
     assert_eq!(
         error.is_client_error(),
         expected_client_error,
-        "Error client_error property mismatch for: {:?}",
-        error
+        "Error client_error property mismatch for: {error:?}"
     );
 }
 
@@ -212,3 +207,4 @@ mod tests {
         assert_eq!(result.unwrap(), "0x111111111");
     }
 }
+

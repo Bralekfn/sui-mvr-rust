@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("✓ Resolved {} packages in {:?}", results.len(), duration);
 
             for (name, address) in &results {
-                println!("   {} -> {}", name, address);
+                println!("   {name} -> {address}");
             }
         }
         Err(e) => println!("✗ Batch package resolution failed: {}", e),
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("✓ Resolved {} types in {:?}", results.len(), duration);
 
             for (name, type_sig) in &results {
-                println!("   {} -> {}", name, type_sig);
+                println!("   {name} -> {type_sig}");
             }
         }
         Err(e) => println!("✗ Batch type resolution failed: {}", e),

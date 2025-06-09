@@ -141,8 +141,7 @@ async fn test_package_name_validation() {
             let result = resolver_with_overrides.resolve_package(valid_name).await;
             assert!(
                 result.is_ok(),
-                "Should accept valid package name: {}",
-                valid_name
+                "Should accept valid package name: {valid_name}"
             );
         } else {
             // For names not in overrides, just test that validation passes
@@ -151,8 +150,7 @@ async fn test_package_name_validation() {
             if let Err(e) = result {
                 assert!(
                     !matches!(e, MvrError::InvalidPackageName(_)),
-                    "Should not reject valid package name format: {}",
-                    valid_name
+                    "Should not reject valid package name format: {valid_name}"
                 );
             }
         }
@@ -355,10 +353,7 @@ async fn test_performance_comparison() {
 
     // In a real implementation with network calls, batch would be faster
     // For now, just ensure both methods work
-    println!(
-        "Individual: {:?}, Batch: {:?}",
-        individual_duration, batch_duration
-    );
+    println!("Individual: {individual_duration:?}, Batch: {batch_duration:?}");
 }
 
 // Note: These tests use overrides to avoid making real network calls.
@@ -367,3 +362,4 @@ async fn test_performance_comparison() {
 // 2. Use actual package names that exist in the registry
 // 3. Handle rate limiting and network timeouts
 // 4. Mock the HTTP client for deterministic testing
+
