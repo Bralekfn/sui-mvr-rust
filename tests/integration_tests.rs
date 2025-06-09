@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use sui_mvr::prelude::*;
 use tokio::time::Duration;
 
@@ -85,7 +84,7 @@ async fn test_batch_operations() {
     assert_eq!(results.get("@batch/pkg3"), Some(&"0x333".to_string()));
 
     // Validate all addresses
-    for (_, address) in &results {
+    for address in results.values() {
         assert_valid_address(address);
     }
 
@@ -104,7 +103,7 @@ async fn test_batch_operations() {
     );
 
     // Validate all type signatures
-    for (_, type_sig) in &results {
+    for type_sig in results.values() {
         assert_valid_type_signature(type_sig);
     }
 
@@ -292,9 +291,8 @@ async fn test_cache_statistics() {
     // Note: Since we're using overrides, these don't actually go to cache in this implementation
     // but in a real implementation, this would test cache population
 
-    // Test cache cleanup
-    let cleaned = resolver.cleanup_expired_cache().unwrap();
-    assert!(cleaned >= 0); // Should not error
+    // Test cache cleanup - just verify it doesn't error
+    let _cleaned = resolver.cleanup_expired_cache().unwrap();
 }
 
 #[tokio::test]
@@ -319,13 +317,11 @@ async fn test_comprehensive_workflow() {
     let batch_results = resolver.resolve_packages(&packages).await.unwrap();
     assert_eq!(batch_results.len(), 2);
 
-    // Test cache statistics
-    let stats = resolver.cache_stats().unwrap();
-    assert!(stats.total_entries >= 0); // Should not error
+    // Test cache statistics - just verify it doesn't error
+    let _stats = resolver.cache_stats().unwrap();
 
-    // Test cache cleanup
-    let cleaned = resolver.cleanup_expired_cache().unwrap();
-    assert!(cleaned >= 0); // Should not error
+    // Test cache cleanup - just verify it doesn't error
+    let _cleaned = resolver.cleanup_expired_cache().unwrap();
 }
 
 #[tokio::test]
@@ -354,31 +350,6 @@ async fn test_performance_comparison() {
         "Individual: {:?}, Batch: {:?}",
         individual_duration, batch_duration
     );
-}
-
-// Helper function to create a test resolver with common overrides
-fn create_test_resolver() -> MvrResolver {
-    let overrides = MvrOverrides::new()
-        .with_package("@suifrens/core".to_string(), "0x123456789".to_string())
-        .with_package(
-            "@suifrens/accessories".to_string(),
-            "0x987654321".to_string(),
-        )
-        .with_package("@test/package".to_string(), "0x111111111".to_string())
-        .with_type(
-            "@suifrens/core::suifren::SuiFren".to_string(),
-            "0x123456789::suifren::SuiFren".to_string(),
-        )
-        .with_type(
-            "@suifrens/core::bullshark::Bullshark".to_string(),
-            "0x123456789::bullshark::Bullshark".to_string(),
-        )
-        .with_type(
-            "@test/package::TestType".to_string(),
-            "0x111111111::module::TestType".to_string(),
-        );
-
-    MvrResolver::testnet().with_overrides(overrides)
 }
 
 // Note: These tests use overrides to avoid making real network calls.

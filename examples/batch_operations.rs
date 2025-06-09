@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fresh_resolver = MvrResolver::mainnet();
     let start = Instant::now();
     match fresh_resolver.resolve_packages(&package_names).await {
-        Ok(batch_results) => {
+        Ok(_batch_results) => {
             let batch_duration = start.elapsed();
 
             println!(

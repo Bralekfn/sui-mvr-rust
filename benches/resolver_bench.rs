@@ -183,8 +183,7 @@ fn bench_error_handling(c: &mut Criterion) {
     c.bench_function("invalid_package_name", |b| {
         b.iter(|| {
             rt.block_on(async {
-                let result = resolver.resolve_package(black_box("invalid-name")).await;
-                black_box(result);
+                let _result = resolver.resolve_package(black_box("invalid-name")).await;
             })
         });
     });
