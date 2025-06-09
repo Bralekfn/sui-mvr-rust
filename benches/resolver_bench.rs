@@ -31,12 +31,14 @@ fn bench_single_package_resolution(c: &mut Criterion) {
     let resolver = create_test_resolver();
 
     c.bench_function("single_package_resolution", |b| {
-        b.to_async(&rt).iter(|| async {
-            let result = resolver
-                .resolve_package(black_box("@bench/pkg1"))
-                .await
-                .unwrap();
-            black_box(result);
+        b.iter(|| {
+            rt.block_on(async {
+                let result = resolver
+                    .resolve_package(black_box("@bench/pkg1"))
+                    .await
+                    .unwrap();
+                black_box(result);
+            })
         });
     });
 }
@@ -62,12 +64,14 @@ fn bench_batch_package_resolution(c: &mut Criterion) {
             BenchmarkId::new("packages", size),
             &packages,
             |b, packages| {
-                b.to_async(&rt).iter(|| async {
-                    let result = resolver
-                        .resolve_packages(black_box(packages))
-                        .await
-                        .unwrap();
-                    black_box(result);
+                b.iter(|| {
+                    rt.block_on(async {
+                        let result = resolver
+                            .resolve_packages(black_box(packages))
+                            .await
+                            .unwrap();
+                        black_box(result);
+                    })
                 });
             },
         );
@@ -80,12 +84,14 @@ fn bench_type_resolution(c: &mut Criterion) {
     let resolver = create_test_resolver();
 
     c.bench_function("single_type_resolution", |b| {
-        b.to_async(&rt).iter(|| async {
-            let result = resolver
-                .resolve_type(black_box("@bench/pkg1::Type1"))
-                .await
-                .unwrap();
-            black_box(result);
+        b.iter(|| {
+            rt.block_on(async {
+                let result = resolver
+                    .resolve_type(black_box("@bench/pkg1::Type1"))
+                    .await
+                    .unwrap();
+                black_box(result);
+            })
         });
     });
 }
@@ -103,25 +109,29 @@ fn bench_cache_performance(c: &mut Criterion) {
     let mut group = c.benchmark_group("cache_performance");
 
     group.bench_function("cache_hit", |b| {
-        b.to_async(&rt).iter(|| async {
-            // This should hit cache
-            let result = resolver
-                .resolve_package(black_box("@bench/pkg1"))
-                .await
-                .unwrap();
-            black_box(result);
+        b.iter(|| {
+            rt.block_on(async {
+                // This should hit cache
+                let result = resolver
+                    .resolve_package(black_box("@bench/pkg1"))
+                    .await
+                    .unwrap();
+                black_box(result);
+            })
         });
     });
 
     group.bench_function("cache_miss", |b| {
-        b.to_async(&rt).iter(|| async {
-            // Create fresh resolver for each iteration to ensure cache miss
-            let fresh_resolver = create_test_resolver();
-            let result = fresh_resolver
-                .resolve_package(black_box("@bench/pkg1"))
-                .await
-                .unwrap();
-            black_box(result);
+        b.iter(|| {
+            rt.block_on(async {
+                // Create fresh resolver for each iteration to ensure cache miss
+                let fresh_resolver = create_test_resolver();
+                let result = fresh_resolver
+                    .resolve_package(black_box("@bench/pkg1"))
+                    .await
+                    .unwrap();
+                black_box(result);
+            })
         });
     });
 
@@ -135,27 +145,31 @@ fn bench_individual_vs_batch(c: &mut Criterion) {
     let mut group = c.benchmark_group("individual_vs_batch");
 
     group.bench_function("individual_resolution", |b| {
-        b.to_async(&rt).iter(|| async {
-            let resolver = create_test_resolver();
-            let mut results = Vec::new();
+        b.iter(|| {
+            rt.block_on(async {
+                let resolver = create_test_resolver();
+                let mut results = Vec::new();
 
-            for &pkg in black_box(&packages) {
-                let result = resolver.resolve_package(pkg).await.unwrap();
-                results.push(result);
-            }
+                for &pkg in black_box(&packages) {
+                    let result = resolver.resolve_package(pkg).await.unwrap();
+                    results.push(result);
+                }
 
-            black_box(results);
+                black_box(results);
+            })
         });
     });
 
     group.bench_function("batch_resolution", |b| {
-        b.to_async(&rt).iter(|| async {
-            let resolver = create_test_resolver();
-            let result = resolver
-                .resolve_packages(black_box(&packages))
-                .await
-                .unwrap();
-            black_box(result);
+        b.iter(|| {
+            rt.block_on(async {
+                let resolver = create_test_resolver();
+                let result = resolver
+                    .resolve_packages(black_box(&packages))
+                    .await
+                    .unwrap();
+                black_box(result);
+            })
         });
     });
 
@@ -167,9 +181,11 @@ fn bench_error_handling(c: &mut Criterion) {
     let resolver = create_test_resolver();
 
     c.bench_function("invalid_package_name", |b| {
-        b.to_async(&rt).iter(|| async {
-            let result = resolver.resolve_package(black_box("invalid-name")).await;
-            black_box(result);
+        b.iter(|| {
+            rt.block_on(async {
+                let result = resolver.resolve_package(black_box("invalid-name")).await;
+                black_box(result);
+            })
         });
     });
 }
@@ -179,16 +195,18 @@ fn bench_concurrent_access(c: &mut Criterion) {
     let resolver = create_test_resolver();
 
     c.bench_function("concurrent_resolution", |b| {
-        b.to_async(&rt).iter(|| async {
-            let tasks = vec![
-                resolver.resolve_package("@bench/pkg1"),
-                resolver.resolve_package("@bench/pkg2"),
-                resolver.resolve_package("@bench/pkg3"),
-                resolver.resolve_package("@bench/pkg4"),
-            ];
+        b.iter(|| {
+            rt.block_on(async {
+                let tasks = vec![
+                    resolver.resolve_package("@bench/pkg1"),
+                    resolver.resolve_package("@bench/pkg2"),
+                    resolver.resolve_package("@bench/pkg3"),
+                    resolver.resolve_package("@bench/pkg4"),
+                ];
 
-            let results = futures::future::join_all(black_box(tasks)).await;
-            black_box(results);
+                let results = futures::future::join_all(black_box(tasks)).await;
+                black_box(results);
+            })
         });
     });
 }
