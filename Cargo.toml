@@ -2,12 +2,12 @@
 name = "sui-mvr"
 version = "0.1.0"
 edition = "2021"
-authors = ["Bralekfn <bralekfn@example.com>"]  # Update with your real email
+authors = ["Bralekfn <bralekfn@example.com>"]
 description = "Move Registry (MVR) plugin for Sui Rust SDK - resolve human-readable package names to addresses"
 license = "Apache-2.0"
 repository = "https://github.com/Bralekfn/sui-mvr-rust"
 homepage = "https://github.com/Bralekfn/sui-mvr-rust"
-documentation = "https://docs.rs/sui-mvr"  # Fixed: should point to docs.rs
+documentation = "https://docs.rs/sui-mvr"
 keywords = ["sui", "mvr", "blockchain", "move-registry", "web3"]
 categories = ["api-bindings", "development-tools", "web-programming"]
 readme = "README.md"
@@ -21,7 +21,6 @@ exclude = [
     "!README.md",
 ]
 
-# SINGLE docs.rs configuration (combining both)
 [package.metadata.docs.rs]
 all-features = true
 features = ["tracing", "metrics"]
@@ -72,8 +71,8 @@ static-resolution = []
 # Feature for additional metrics and monitoring
 metrics = []
 
-# Feature for WebAssembly support
-wasm = ["reqwest/wasm"]
+# Feature for WebAssembly support - using js feature instead of wasm
+wasm = ["reqwest/js"]
 
 [[example]]
 name = "basic_usage"

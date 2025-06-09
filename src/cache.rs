@@ -1,7 +1,7 @@
+use crate::error::{MvrError, MvrResult};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::time::{Duration, Instant};
-use crate::error::{MvrError, MvrResult};
 
 /// Cached resolution entry
 #[derive(Debug, Clone)]
@@ -52,7 +52,9 @@ impl MvrCache {
     }
 
     pub fn get(&self, key: &str) -> Option<String> {
-        let mut entries = self.entries.lock()
+        let mut entries = self
+            .entries
+            .lock()
             .map_err(|_| MvrError::CacheError("Failed to acquire cache lock".to_string()))
             .ok()?;
 
@@ -72,7 +74,9 @@ impl MvrCache {
     }
 
     pub fn insert_with_ttl(&self, key: String, value: String, ttl: Duration) -> MvrResult<()> {
-        let mut entries = self.entries.lock()
+        let mut entries = self
+            .entries
+            .lock()
             .map_err(|_| MvrError::CacheError("Failed to acquire cache lock".to_string()))?;
 
         // Check if we need to evict entries
@@ -86,14 +90,18 @@ impl MvrCache {
     }
 
     pub fn remove(&self, key: &str) -> MvrResult<Option<String>> {
-        let mut entries = self.entries.lock()
+        let mut entries = self
+            .entries
+            .lock()
             .map_err(|_| MvrError::CacheError("Failed to acquire cache lock".to_string()))?;
 
         Ok(entries.remove(key).map(|entry| entry.value))
     }
 
     pub fn clear(&self) -> MvrResult<()> {
-        let mut entries = self.entries.lock()
+        let mut entries = self
+            .entries
+            .lock()
             .map_err(|_| MvrError::CacheError("Failed to acquire cache lock".to_string()))?;
 
         entries.clear();
@@ -101,17 +109,18 @@ impl MvrCache {
     }
 
     pub fn stats(&self) -> MvrResult<CacheStats> {
-        let entries = self.entries.lock()
+        let entries = self
+            .entries
+            .lock()
             .map_err(|_| MvrError::CacheError("Failed to acquire cache lock".to_string()))?;
 
         let total_entries = entries.len();
-        let expired_entries = entries.iter()
+        let expired_entries = entries
+            .iter()
             .filter(|(_, entry)| entry.is_expired())
             .count();
-        
-        let total_hits: u64 = entries.iter()
-            .map(|(_, entry)| entry.hit_count)
-            .sum();
+
+        let total_hits: u64 = entries.iter().map(|(_, entry)| entry.hit_count).sum();
 
         Ok(CacheStats {
             total_entries,
@@ -123,7 +132,9 @@ impl MvrCache {
     }
 
     pub fn cleanup_expired(&self) -> MvrResult<usize> {
-        let mut entries = self.entries.lock()
+        let mut entries = self
+            .entries
+            .lock()
             .map_err(|_| MvrError::CacheError("Failed to acquire cache lock".to_string()))?;
 
         let initial_size = entries.len();
@@ -137,7 +148,8 @@ impl MvrCache {
         }
 
         // Find the least recently used entry
-        let lru_key = entries.iter()
+        let lru_key = entries
+            .iter()
             .min_by_key(|(_, entry)| entry.last_accessed)
             .map(|(key, _)| key.clone());
 
@@ -193,14 +205,16 @@ mod tests {
     #[tokio::test]
     async fn test_cache_basic_operations() {
         let cache = MvrCache::new(Duration::from_secs(1), 10);
-        
+
         // Test insertion and retrieval
-        cache.insert("key1".to_string(), "value1".to_string()).unwrap();
+        cache
+            .insert("key1".to_string(), "value1".to_string())
+            .unwrap();
         assert_eq!(cache.get("key1"), Some("value1".to_string()));
-        
+
         // Test non-existent key
         assert_eq!(cache.get("nonexistent"), None);
-        
+
         // Test removal
         let removed = cache.remove("key1").unwrap();
         assert_eq!(removed, Some("value1".to_string()));
@@ -210,10 +224,12 @@ mod tests {
     #[tokio::test]
     async fn test_cache_expiration() {
         let cache = MvrCache::new(Duration::from_millis(100), 10);
-        
-        cache.insert("key1".to_string(), "value1".to_string()).unwrap();
+
+        cache
+            .insert("key1".to_string(), "value1".to_string())
+            .unwrap();
         assert_eq!(cache.get("key1"), Some("value1".to_string()));
-        
+
         // Wait for expiration
         sleep(Duration::from_millis(150)).await;
         assert_eq!(cache.get("key1"), None);
@@ -222,17 +238,23 @@ mod tests {
     #[tokio::test]
     async fn test_cache_lru_eviction() {
         let cache = MvrCache::new(Duration::from_secs(10), 2);
-        
+
         // Fill cache to capacity
-        cache.insert("key1".to_string(), "value1".to_string()).unwrap();
-        cache.insert("key2".to_string(), "value2".to_string()).unwrap();
-        
+        cache
+            .insert("key1".to_string(), "value1".to_string())
+            .unwrap();
+        cache
+            .insert("key2".to_string(), "value2".to_string())
+            .unwrap();
+
         // Access key1 to make it more recently used
         cache.get("key1");
-        
+
         // Insert key3, should evict key2 (LRU)
-        cache.insert("key3".to_string(), "value3".to_string()).unwrap();
-        
+        cache
+            .insert("key3".to_string(), "value3".to_string())
+            .unwrap();
+
         assert_eq!(cache.get("key1"), Some("value1".to_string()));
         assert_eq!(cache.get("key2"), None);
         assert_eq!(cache.get("key3"), Some("value3".to_string()));
@@ -241,14 +263,18 @@ mod tests {
     #[test]
     fn test_cache_stats() {
         let cache = MvrCache::new(Duration::from_secs(1), 10);
-        
-        cache.insert("key1".to_string(), "value1".to_string()).unwrap();
-        cache.insert("key2".to_string(), "value2".to_string()).unwrap();
-        
+
+        cache
+            .insert("key1".to_string(), "value1".to_string())
+            .unwrap();
+        cache
+            .insert("key2".to_string(), "value2".to_string())
+            .unwrap();
+
         // Access key1 multiple times
         cache.get("key1");
         cache.get("key1");
-        
+
         let stats = cache.stats().unwrap();
         assert_eq!(stats.total_entries, 2);
         assert_eq!(stats.valid_entries, 2);
@@ -258,23 +284,30 @@ mod tests {
     #[test]
     fn test_cache_key_functions() {
         assert_eq!(MvrCache::package_key("@test/pkg"), "pkg:@test/pkg");
-        assert_eq!(MvrCache::type_key("@test/pkg::Type"), "type:@test/pkg::Type");
+        assert_eq!(
+            MvrCache::type_key("@test/pkg::Type"),
+            "type:@test/pkg::Type"
+        );
     }
 
     #[tokio::test]
     async fn test_cache_cleanup() {
         let cache = MvrCache::new(Duration::from_millis(50), 10);
-        
+
         // Insert entries with short TTL
-        cache.insert("key1".to_string(), "value1".to_string()).unwrap();
-        cache.insert("key2".to_string(), "value2".to_string()).unwrap();
-        
+        cache
+            .insert("key1".to_string(), "value1".to_string())
+            .unwrap();
+        cache
+            .insert("key2".to_string(), "value2".to_string())
+            .unwrap();
+
         // Wait for expiration
         sleep(Duration::from_millis(100)).await;
-        
+
         let removed = cache.cleanup_expired().unwrap();
         assert_eq!(removed, 2);
-        
+
         let stats = cache.stats().unwrap();
         assert_eq!(stats.total_entries, 0);
     }
@@ -283,10 +316,12 @@ mod tests {
     fn test_cache_clone() {
         let cache = MvrCache::new(Duration::from_secs(1), 10);
         let cloned_cache = cache.clone();
-        
+
         // Insert in original
-        cache.insert("key1".to_string(), "value1".to_string()).unwrap();
-        
+        cache
+            .insert("key1".to_string(), "value1".to_string())
+            .unwrap();
+
         // Should be accessible from clone (shared Arc)
         assert_eq!(cloned_cache.get("key1"), Some("value1".to_string()));
     }

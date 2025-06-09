@@ -1,6 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use sui_mvr::prelude::*;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::time::Duration;
+use sui_mvr::prelude::*;
 use tokio::runtime::Runtime;
 
 fn create_test_resolver() -> MvrResolver {
@@ -10,9 +10,18 @@ fn create_test_resolver() -> MvrResolver {
         .with_package("@bench/pkg3".to_string(), "0x333".to_string())
         .with_package("@bench/pkg4".to_string(), "0x444".to_string())
         .with_package("@bench/pkg5".to_string(), "0x555".to_string())
-        .with_type("@bench/pkg1::Type1".to_string(), "0x111::module::Type1".to_string())
-        .with_type("@bench/pkg2::Type2".to_string(), "0x222::module::Type2".to_string())
-        .with_type("@bench/pkg3::Type3".to_string(), "0x333::module::Type3".to_string());
+        .with_type(
+            "@bench/pkg1::Type1".to_string(),
+            "0x111::module::Type1".to_string(),
+        )
+        .with_type(
+            "@bench/pkg2::Type2".to_string(),
+            "0x222::module::Type2".to_string(),
+        )
+        .with_type(
+            "@bench/pkg3::Type3".to_string(),
+            "0x333::module::Type3".to_string(),
+        );
 
     MvrResolver::testnet().with_overrides(overrides)
 }
@@ -37,27 +46,31 @@ fn bench_batch_package_resolution(c: &mut Criterion) {
     let resolver = create_test_resolver();
 
     let mut group = c.benchmark_group("batch_package_resolution");
-    
+
     for size in [1, 2, 4, 8, 16].iter() {
         let packages: Vec<&str> = (0..*size)
             .map(|i| match i % 5 {
                 0 => "@bench/pkg1",
-                1 => "@bench/pkg2", 
+                1 => "@bench/pkg2",
                 2 => "@bench/pkg3",
                 3 => "@bench/pkg4",
                 _ => "@bench/pkg5",
             })
             .collect();
 
-        group.bench_with_input(BenchmarkId::new("packages", size), &packages, |b, packages| {
-            b.to_async(&rt).iter(|| async {
-                let result = resolver
-                    .resolve_packages(black_box(packages))
-                    .await
-                    .unwrap();
-                black_box(result);
-            });
-        });
+        group.bench_with_input(
+            BenchmarkId::new("packages", size),
+            &packages,
+            |b, packages| {
+                b.to_async(&rt).iter(|| async {
+                    let result = resolver
+                        .resolve_packages(black_box(packages))
+                        .await
+                        .unwrap();
+                    black_box(result);
+                });
+            },
+        );
     }
     group.finish();
 }
@@ -88,7 +101,7 @@ fn bench_cache_performance(c: &mut Criterion) {
     });
 
     let mut group = c.benchmark_group("cache_performance");
-    
+
     group.bench_function("cache_hit", |b| {
         b.to_async(&rt).iter(|| async {
             // This should hit cache
@@ -125,12 +138,12 @@ fn bench_individual_vs_batch(c: &mut Criterion) {
         b.to_async(&rt).iter(|| async {
             let resolver = create_test_resolver();
             let mut results = Vec::new();
-            
+
             for &pkg in black_box(&packages) {
                 let result = resolver.resolve_package(pkg).await.unwrap();
                 results.push(result);
             }
-            
+
             black_box(results);
         });
     });
@@ -155,9 +168,7 @@ fn bench_error_handling(c: &mut Criterion) {
 
     c.bench_function("invalid_package_name", |b| {
         b.to_async(&rt).iter(|| async {
-            let result = resolver
-                .resolve_package(black_box("invalid-name"))
-                .await;
+            let result = resolver.resolve_package(black_box("invalid-name")).await;
             black_box(result);
         });
     });
@@ -175,7 +186,7 @@ fn bench_concurrent_access(c: &mut Criterion) {
                 resolver.resolve_package("@bench/pkg3"),
                 resolver.resolve_package("@bench/pkg4"),
             ];
-            
+
             let results = futures::future::join_all(black_box(tasks)).await;
             black_box(results);
         });

@@ -164,7 +164,7 @@ mod tests {
         let config = MvrConfig::testnet()
             .with_cache_ttl(Duration::from_secs(1800))
             .with_timeout(Duration::from_secs(60));
-        
+
         assert_eq!(config.cache_ttl, Duration::from_secs(1800));
         assert_eq!(config.timeout, Duration::from_secs(60));
     }
@@ -173,7 +173,7 @@ mod tests {
     fn test_mvr_config_clone() {
         let config = MvrConfig::mainnet();
         let cloned_config = config.clone();
-        
+
         assert_eq!(config.endpoint_url, cloned_config.endpoint_url);
         assert_eq!(config.cache_ttl, cloned_config.cache_ttl);
     }
@@ -183,28 +183,28 @@ mod tests {
         let overrides = MvrOverrides::new()
             .with_package("@test/package".to_string(), "0x123".to_string())
             .with_type("@test/Type".to_string(), "0x123::module::Type".to_string());
-        
+
         assert_eq!(overrides.packages.len(), 1);
         assert_eq!(overrides.types.len(), 1);
     }
 
     #[test]
     fn test_mvr_overrides_clone() {
-        let overrides = MvrOverrides::new()
-            .with_package("@test/package".to_string(), "0x123".to_string());
-        
+        let overrides =
+            MvrOverrides::new().with_package("@test/package".to_string(), "0x123".to_string());
+
         let cloned_overrides = overrides.clone();
         assert_eq!(overrides.packages, cloned_overrides.packages);
     }
 
     #[test]
     fn test_overrides_json_serialization() {
-        let overrides = MvrOverrides::new()
-            .with_package("@test/package".to_string(), "0x123".to_string());
-        
+        let overrides =
+            MvrOverrides::new().with_package("@test/package".to_string(), "0x123".to_string());
+
         let json = overrides.to_json().unwrap();
         let deserialized = MvrOverrides::from_json(&json).unwrap();
-        
+
         assert_eq!(overrides.packages, deserialized.packages);
     }
 }

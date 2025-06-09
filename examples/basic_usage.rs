@@ -1,5 +1,5 @@
 //! Basic usage example for sui-mvr
-//! 
+//!
 //! Run with: cargo run --example basic_usage
 
 use sui_mvr::prelude::*;
@@ -10,9 +10,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create a resolver for mainnet
     let resolver = MvrResolver::mainnet();
-    
+
     println!("📦 Resolving package addresses...");
-    
+
     // Resolve a package name to address
     match resolver.resolve_package("@suifrens/core").await {
         Ok(address) => println!("✓ SuiFrens core package: {}", address),
@@ -28,12 +28,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n🏷️ Resolving type signatures...");
 
     // Resolve type names
-    match resolver.resolve_type("@suifrens/core::suifren::SuiFren").await {
+    match resolver
+        .resolve_type("@suifrens/core::suifren::SuiFren")
+        .await
+    {
         Ok(type_sig) => println!("✓ SuiFren type: {}", type_sig),
         Err(e) => println!("✗ Failed to resolve SuiFren type: {}", e),
     }
 
-    match resolver.resolve_type("@suifrens/core::bullshark::Bullshark").await {
+    match resolver
+        .resolve_type("@suifrens/core::bullshark::Bullshark")
+        .await
+    {
         Ok(type_sig) => println!("✓ Bullshark type: {}", type_sig),
         Err(e) => println!("✗ Failed to resolve Bullshark type: {}", e),
     }

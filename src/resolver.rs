@@ -1,6 +1,6 @@
-use crate::cache::{MvrCache, CacheStats};
-use crate::error::{MvrError, MvrResult, validate_package_name, validate_type_name};
-use crate::types::{MvrConfig, MvrOverrides, BatchResolutionRequest, BatchResolutionResponse};
+use crate::cache::{CacheStats, MvrCache};
+use crate::error::{validate_package_name, validate_type_name, MvrError, MvrResult};
+use crate::types::{BatchResolutionRequest, BatchResolutionResponse, MvrConfig, MvrOverrides};
 use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -71,10 +71,10 @@ impl MvrResolver {
 
         // Fetch from API
         let address = self.fetch_package_from_api(package_name).await?;
-        
+
         // Store in cache
         self.cache.insert(cache_key, address.clone())?;
-        
+
         Ok(address)
     }
 
@@ -97,15 +97,18 @@ impl MvrResolver {
 
         // Fetch from API
         let type_sig = self.fetch_type_from_api(type_name).await?;
-        
+
         // Store in cache
         self.cache.insert(cache_key, type_sig.clone())?;
-        
+
         Ok(type_sig)
     }
 
     /// Batch resolve multiple packages
-    pub async fn resolve_packages(&self, package_names: &[&str]) -> MvrResult<HashMap<String, String>> {
+    pub async fn resolve_packages(
+        &self,
+        package_names: &[&str],
+    ) -> MvrResult<HashMap<String, String>> {
         let mut results = HashMap::new();
         let mut to_fetch = Vec::new();
 
@@ -134,7 +137,7 @@ impl MvrResolver {
         // Fetch remaining packages from API
         if !to_fetch.is_empty() {
             let fetched = self.batch_fetch_packages(&to_fetch).await?;
-            
+
             // Store in cache and add to results
             for (name, address) in fetched {
                 let cache_key = MvrCache::package_key(&name);
@@ -176,7 +179,7 @@ impl MvrResolver {
         // Fetch remaining types from API
         if !to_fetch.is_empty() {
             let fetched = self.batch_fetch_types(&to_fetch).await?;
-            
+
             // Store in cache and add to results
             for (name, type_sig) in fetched {
                 let cache_key = MvrCache::type_key(&name);
@@ -211,14 +214,21 @@ impl MvrResolver {
     // Private helper methods
 
     async fn fetch_package_from_api(&self, package_name: &str) -> MvrResult<String> {
-        let _permit = self.semaphore.acquire().await
-            .map_err(|_| MvrError::TooManyConcurrentRequests { 
-                max_concurrent: self.config.max_concurrent_requests 
-            })?;
+        let _permit =
+            self.semaphore
+                .acquire()
+                .await
+                .map_err(|_| MvrError::TooManyConcurrentRequests {
+                    max_concurrent: self.config.max_concurrent_requests,
+                })?;
 
-        let url = format!("{}/resolve/package/{}", self.config.endpoint_url, package_name);
-        
-        let response = self.client
+        let url = format!(
+            "{}/resolve/package/{}",
+            self.config.endpoint_url, package_name
+        );
+
+        let response = self
+            .client
             .get(&url)
             .header("Accept", "application/json")
             .send()
@@ -232,32 +242,42 @@ impl MvrResolver {
             }
             404 => Err(MvrError::PackageNotFound(package_name.to_string())),
             429 => {
-                let retry_after = response.headers()
+                let retry_after = response
+                    .headers()
                     .get("retry-after")
                     .and_then(|h| h.to_str().ok())
                     .and_then(|s| s.parse().ok())
                     .unwrap_or(60);
-                Err(MvrError::RateLimitExceeded { retry_after_secs: retry_after })
+                Err(MvrError::RateLimitExceeded {
+                    retry_after_secs: retry_after,
+                })
             }
             status => {
-                let message = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-                Err(MvrError::ServerError { 
-                    status_code: status, 
-                    message 
+                let message = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                Err(MvrError::ServerError {
+                    status_code: status,
+                    message,
                 })
             }
         }
     }
 
     async fn fetch_type_from_api(&self, type_name: &str) -> MvrResult<String> {
-        let _permit = self.semaphore.acquire().await
-            .map_err(|_| MvrError::TooManyConcurrentRequests { 
-                max_concurrent: self.config.max_concurrent_requests 
-            })?;
+        let _permit =
+            self.semaphore
+                .acquire()
+                .await
+                .map_err(|_| MvrError::TooManyConcurrentRequests {
+                    max_concurrent: self.config.max_concurrent_requests,
+                })?;
 
         let url = format!("{}/resolve/type/{}", self.config.endpoint_url, type_name);
-        
-        let response = self.client
+
+        let response = self
+            .client
             .get(&url)
             .header("Accept", "application/json")
             .send()
@@ -270,28 +290,40 @@ impl MvrResolver {
             }
             404 => Err(MvrError::TypeNotFound(type_name.to_string())),
             429 => {
-                let retry_after = response.headers()
+                let retry_after = response
+                    .headers()
                     .get("retry-after")
                     .and_then(|h| h.to_str().ok())
                     .and_then(|s| s.parse().ok())
                     .unwrap_or(60);
-                Err(MvrError::RateLimitExceeded { retry_after_secs: retry_after })
+                Err(MvrError::RateLimitExceeded {
+                    retry_after_secs: retry_after,
+                })
             }
             status => {
-                let message = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-                Err(MvrError::ServerError { 
-                    status_code: status, 
-                    message 
+                let message = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                Err(MvrError::ServerError {
+                    status_code: status,
+                    message,
                 })
             }
         }
     }
 
-    async fn batch_fetch_packages(&self, package_names: &[&str]) -> MvrResult<HashMap<String, String>> {
-        let _permit = self.semaphore.acquire().await
-            .map_err(|_| MvrError::TooManyConcurrentRequests { 
-                max_concurrent: self.config.max_concurrent_requests 
-            })?;
+    async fn batch_fetch_packages(
+        &self,
+        package_names: &[&str],
+    ) -> MvrResult<HashMap<String, String>> {
+        let _permit =
+            self.semaphore
+                .acquire()
+                .await
+                .map_err(|_| MvrError::TooManyConcurrentRequests {
+                    max_concurrent: self.config.max_concurrent_requests,
+                })?;
 
         let request = BatchResolutionRequest {
             packages: Some(package_names.iter().map(|s| s.to_string()).collect()),
@@ -299,8 +331,9 @@ impl MvrResolver {
         };
 
         let url = format!("{}/resolve/batch", self.config.endpoint_url);
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&url)
             .header("Accept", "application/json")
             .header("Content-Type", "application/json")
@@ -314,20 +347,26 @@ impl MvrResolver {
                 Ok(batch_response.packages.unwrap_or_default())
             }
             status => {
-                let message = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-                Err(MvrError::ServerError { 
-                    status_code: status, 
-                    message 
+                let message = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                Err(MvrError::ServerError {
+                    status_code: status,
+                    message,
                 })
             }
         }
     }
 
     async fn batch_fetch_types(&self, type_names: &[&str]) -> MvrResult<HashMap<String, String>> {
-        let _permit = self.semaphore.acquire().await
-            .map_err(|_| MvrError::TooManyConcurrentRequests { 
-                max_concurrent: self.config.max_concurrent_requests 
-            })?;
+        let _permit =
+            self.semaphore
+                .acquire()
+                .await
+                .map_err(|_| MvrError::TooManyConcurrentRequests {
+                    max_concurrent: self.config.max_concurrent_requests,
+                })?;
 
         let request = BatchResolutionRequest {
             packages: None,
@@ -335,8 +374,9 @@ impl MvrResolver {
         };
 
         let url = format!("{}/resolve/batch", self.config.endpoint_url);
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&url)
             .header("Accept", "application/json")
             .header("Content-Type", "application/json")
@@ -350,16 +390,23 @@ impl MvrResolver {
                 Ok(batch_response.types.unwrap_or_default())
             }
             status => {
-                let message = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-                Err(MvrError::ServerError { 
-                    status_code: status, 
-                    message 
+                let message = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Unknown error".to_string());
+                Err(MvrError::ServerError {
+                    status_code: status,
+                    message,
                 })
             }
         }
     }
 
-    fn extract_package_address(&self, response_text: &str, _package_name: &str) -> MvrResult<String> {
+    fn extract_package_address(
+        &self,
+        response_text: &str,
+        _package_name: &str,
+    ) -> MvrResult<String> {
         // This is a simplified extraction - in reality you'd parse the JSON response properly
         // For now, assuming the response contains the address directly
         if response_text.starts_with("0x") && response_text.len() >= 42 {
@@ -371,7 +418,9 @@ impl MvrResolver {
                 .or_else(|| json.get("package_id"))
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string())
-                .ok_or_else(|| MvrError::JsonError(serde_json::Error::custom("Address not found in response")))
+                .ok_or_else(|| {
+                    MvrError::JsonError(serde_json::Error::custom("Address not found in response"))
+                })
         }
     }
 
@@ -382,7 +431,11 @@ impl MvrResolver {
             .or_else(|| json.get("signature"))
             .and_then(|v| v.as_str())
             .map(|s| s.to_string())
-            .ok_or_else(|| MvrError::JsonError(serde_json::Error::custom("Type signature not found in response")))
+            .ok_or_else(|| {
+                MvrError::JsonError(serde_json::Error::custom(
+                    "Type signature not found in response",
+                ))
+            })
     }
 }
 
@@ -471,9 +524,9 @@ mod tests {
 
     #[test]
     fn test_resolver_with_overrides() {
-        let overrides = MvrOverrides::new()
-            .with_package("@test/package".to_string(), "0x123".to_string());
-        
+        let overrides =
+            MvrOverrides::new().with_package("@test/package".to_string(), "0x123".to_string());
+
         let resolver = MvrResolver::testnet().with_overrides(overrides);
         assert!(resolver.config().overrides.is_some());
     }
@@ -481,12 +534,12 @@ mod tests {
     #[tokio::test]
     async fn test_resolve_mvr_target() {
         let resolver = MvrResolver::testnet();
-        
+
         // Test non-MVR target (should pass through unchanged)
         let normal_target = "0x123::module::function";
         let result = resolve_mvr_target(&resolver, normal_target).await.unwrap();
         assert_eq!(result, normal_target);
-        
+
         // Test invalid MVR target format
         let invalid_target = "@invalid-format";
         assert!(resolve_mvr_target(&resolver, invalid_target).await.is_err());
@@ -495,11 +548,11 @@ mod tests {
     #[tokio::test]
     async fn test_cache_operations() {
         let resolver = MvrResolver::testnet();
-        
+
         // Test cache stats on empty cache
         let stats = resolver.cache_stats().unwrap();
         assert_eq!(stats.total_entries, 0);
-        
+
         // Test cache clearing
         resolver.clear_cache().unwrap();
     }
@@ -507,11 +560,11 @@ mod tests {
     #[tokio::test]
     async fn test_batch_resolution_empty() {
         let resolver = MvrResolver::testnet();
-        
+
         // Test empty batch resolution
         let results = resolver.resolve_packages(&[]).await.unwrap();
         assert!(results.is_empty());
-        
+
         let results = resolver.resolve_types(&[]).await.unwrap();
         assert!(results.is_empty());
     }
@@ -520,7 +573,7 @@ mod tests {
     async fn test_clone_resolver() {
         let resolver = MvrResolver::testnet();
         let cloned_resolver = resolver.clone();
-        
+
         // Both should work
         assert!(resolver.config().endpoint_url.contains("testnet"));
         assert!(cloned_resolver.config().endpoint_url.contains("testnet"));

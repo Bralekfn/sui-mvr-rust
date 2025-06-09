@@ -1,12 +1,12 @@
-use sui_mvr::prelude::*;
 use std::collections::HashMap;
+use sui_mvr::prelude::*;
 use tokio::time::Duration;
 
 mod common;
 use common::*;
 
 /// Integration tests for the MVR resolver
-/// 
+///
 /// These tests verify the complete functionality of the resolver,
 /// including configuration, caching, error handling, and API interactions.
 
@@ -15,7 +15,10 @@ async fn test_resolver_configuration() {
     // Test mainnet configuration
     let mainnet_resolver = MvrResolver::mainnet();
     assert!(mainnet_resolver.config().endpoint_url.contains("mainnet"));
-    assert_eq!(mainnet_resolver.config().cache_ttl, Duration::from_secs(3600));
+    assert_eq!(
+        mainnet_resolver.config().cache_ttl,
+        Duration::from_secs(3600)
+    );
 
     // Test testnet configuration
     let testnet_resolver = MvrResolver::testnet();
@@ -25,9 +28,12 @@ async fn test_resolver_configuration() {
     let custom_config = MvrConfig::testnet()
         .with_cache_ttl(Duration::from_secs(1800))
         .with_timeout(Duration::from_secs(60));
-    
+
     let custom_resolver = MvrResolver::new(custom_config);
-    assert_eq!(custom_resolver.config().cache_ttl, Duration::from_secs(1800));
+    assert_eq!(
+        custom_resolver.config().cache_ttl,
+        Duration::from_secs(1800)
+    );
     assert_eq!(custom_resolver.config().timeout, Duration::from_secs(60));
 }
 
@@ -41,7 +47,10 @@ async fn test_static_overrides() {
     assert_valid_address(&result);
 
     // Type resolution should use override
-    let result = resolver.resolve_type("@test/package::TestType").await.unwrap();
+    let result = resolver
+        .resolve_type("@test/package::TestType")
+        .await
+        .unwrap();
     assert_eq!(result, "0x111111111::module::TestType");
     assert_valid_type_signature(&result);
 }
@@ -56,7 +65,7 @@ async fn test_cache_functionality() {
 
     // Test cache clearing
     resolver.clear_cache().unwrap();
-    
+
     let stats_after_clear = resolver.cache_stats().unwrap();
     assert_eq!(stats_after_clear.total_entries, 0);
 }
@@ -69,7 +78,7 @@ async fn test_batch_operations() {
     // Test batch package resolution
     let package_names = vec!["@batch/pkg1", "@batch/pkg2", "@batch/pkg3"];
     let results = resolver.resolve_packages(&package_names).await.unwrap();
-    
+
     assert_eq!(results.len(), 3);
     assert_eq!(results.get("@batch/pkg1"), Some(&"0x111".to_string()));
     assert_eq!(results.get("@batch/pkg2"), Some(&"0x222".to_string()));
@@ -83,10 +92,16 @@ async fn test_batch_operations() {
     // Test batch type resolution
     let type_names = vec!["@batch/pkg1::Type1", "@batch/pkg2::Type2"];
     let results = resolver.resolve_types(&type_names).await.unwrap();
-    
+
     assert_eq!(results.len(), 2);
-    assert_eq!(results.get("@batch/pkg1::Type1"), Some(&"0x111::module::Type1".to_string()));
-    assert_eq!(results.get("@batch/pkg2::Type2"), Some(&"0x222::module::Type2".to_string()));
+    assert_eq!(
+        results.get("@batch/pkg1::Type1"),
+        Some(&"0x111::module::Type1".to_string())
+    );
+    assert_eq!(
+        results.get("@batch/pkg2::Type2"),
+        Some(&"0x222::module::Type2".to_string())
+    );
 
     // Validate all type signatures
     for (_, type_sig) in &results {
@@ -108,8 +123,12 @@ async fn test_package_name_validation() {
     // Test invalid package names
     for invalid_name in invalid_package_names() {
         let result = resolver.resolve_package(invalid_name).await;
-        assert!(result.is_err(), "Should reject invalid package name: {}", invalid_name);
-        
+        assert!(
+            result.is_err(),
+            "Should reject invalid package name: {}",
+            invalid_name
+        );
+
         if let Err(e) = result {
             assert!(matches!(e, MvrError::InvalidPackageName(_)));
             test_error_properties(&e, false, true);
@@ -122,7 +141,11 @@ async fn test_package_name_validation() {
         // If it's in our test overrides, it should succeed
         if valid_name == "@suifrens/core" || valid_name == "@test/pkg" {
             let result = resolver_with_overrides.resolve_package(valid_name).await;
-            assert!(result.is_ok(), "Should accept valid package name: {}", valid_name);
+            assert!(
+                result.is_ok(),
+                "Should accept valid package name: {}",
+                valid_name
+            );
         }
     }
 }
@@ -134,8 +157,12 @@ async fn test_type_name_validation() {
     // Test invalid type names
     for invalid_type in invalid_type_names() {
         let result = resolver.resolve_type(invalid_type).await;
-        assert!(result.is_err(), "Should reject invalid type name: {}", invalid_type);
-        
+        assert!(
+            result.is_err(),
+            "Should reject invalid type name: {}",
+            invalid_type
+        );
+
         if let Err(e) = result {
             assert!(matches!(e, MvrError::InvalidTypeName(_)));
             test_error_properties(&e, false, true);
@@ -144,7 +171,9 @@ async fn test_type_name_validation() {
 
     // Test valid type name formats with overrides
     let resolver_with_overrides = create_test_resolver();
-    let result = resolver_with_overrides.resolve_type("@suifrens/core::suifren::SuiFren").await;
+    let result = resolver_with_overrides
+        .resolve_type("@suifrens/core::suifren::SuiFren")
+        .await;
     assert!(result.is_ok(), "Should accept valid type name");
 }
 
@@ -207,12 +236,15 @@ async fn test_concurrent_operations() {
 
     // Wait for all tasks to complete
     let results = futures::future::join_all(tasks).await;
-    
+
     // Verify all tasks completed successfully
     for result in results {
         let resolution_result = result.unwrap();
-        assert!(resolution_result.is_ok(), "Concurrent resolution should succeed");
-        
+        assert!(
+            resolution_result.is_ok(),
+            "Concurrent resolution should succeed"
+        );
+
         if let Ok(address) = resolution_result {
             assert_valid_address(&address);
         }
@@ -226,7 +258,9 @@ async fn test_error_types_and_properties() {
     test_error_properties(&package_not_found, false, true);
     assert!(!package_not_found.is_rate_limited());
 
-    let rate_limited = MvrError::RateLimitExceeded { retry_after_secs: 60 };
+    let rate_limited = MvrError::RateLimitExceeded {
+        retry_after_secs: 60,
+    };
     test_error_properties(&rate_limited, true, false);
     assert!(rate_limited.is_rate_limited());
     assert_eq!(rate_limited.retry_delay(), Some(Duration::from_secs(60)));
@@ -250,7 +284,10 @@ async fn test_cache_statistics() {
 
     // Perform some resolutions to populate cache
     let _ = resolver.resolve_package("@suifrens/core").await.unwrap();
-    let _ = resolver.resolve_package("@suifrens/accessories").await.unwrap();
+    let _ = resolver
+        .resolve_package("@suifrens/accessories")
+        .await
+        .unwrap();
 
     // Note: Since we're using overrides, these don't actually go to cache in this implementation
     // but in a real implementation, this would test cache population
@@ -270,7 +307,10 @@ async fn test_comprehensive_workflow() {
     assert_valid_address(&core_pkg);
 
     // Test individual type resolution
-    let suifren_type = resolver.resolve_type("@suifrens/core::suifren::SuiFren").await.unwrap();
+    let suifren_type = resolver
+        .resolve_type("@suifrens/core::suifren::SuiFren")
+        .await
+        .unwrap();
     assert_eq!(suifren_type, "0x123456789::suifren::SuiFren");
     assert_valid_type_signature(&suifren_type);
 
@@ -310,7 +350,35 @@ async fn test_performance_comparison() {
 
     // In a real implementation with network calls, batch would be faster
     // For now, just ensure both methods work
-    println!("Individual: {:?}, Batch: {:?}", individual_duration, batch_duration);
+    println!(
+        "Individual: {:?}, Batch: {:?}",
+        individual_duration, batch_duration
+    );
+}
+
+// Helper function to create a test resolver with common overrides
+fn create_test_resolver() -> MvrResolver {
+    let overrides = MvrOverrides::new()
+        .with_package("@suifrens/core".to_string(), "0x123456789".to_string())
+        .with_package(
+            "@suifrens/accessories".to_string(),
+            "0x987654321".to_string(),
+        )
+        .with_package("@test/package".to_string(), "0x111111111".to_string())
+        .with_type(
+            "@suifrens/core::suifren::SuiFren".to_string(),
+            "0x123456789::suifren::SuiFren".to_string(),
+        )
+        .with_type(
+            "@suifrens/core::bullshark::Bullshark".to_string(),
+            "0x123456789::bullshark::Bullshark".to_string(),
+        )
+        .with_type(
+            "@test/package::TestType".to_string(),
+            "0x111111111::module::TestType".to_string(),
+        );
+
+    MvrResolver::testnet().with_overrides(overrides)
 }
 
 // Note: These tests use overrides to avoid making real network calls.
@@ -318,77 +386,4 @@ async fn test_performance_comparison() {
 // 1. Set up environment variables for test endpoints
 // 2. Use actual package names that exist in the registry
 // 3. Handle rate limiting and network timeouts
-// 4. Mock the HTTP client for deterministic testing_package("@concurrent/pkg2".to_string(), "0x222".to_string())
-        .with_package("@concurrent/pkg3".to_string(), "0x333".to_string());
-
-    let resolver = MvrResolver::testnet().with_overrides(overrides);
-
-    // Spawn multiple concurrent resolution tasks
-    let tasks = vec![
-        tokio::spawn({
-            let resolver = resolver.clone();
-            async move { resolver.resolve_package("@concurrent/pkg1").await }
-        }),
-        tokio::spawn({
-            let resolver = resolver.clone();
-            async move { resolver.resolve_package("@concurrent/pkg2").await }
-        }),
-        tokio::spawn({
-            let resolver = resolver.clone();
-            async move { resolver.resolve_package("@concurrent/pkg3").await }
-        }),
-    ];
-
-    // Wait for all tasks to complete
-    let results = futures::future::join_all(tasks).await;
-    
-    // Verify all tasks completed successfully
-    for result in results {
-        let resolution_result = result.unwrap();
-        assert!(resolution_result.is_ok());
-    }
-}
-
-// Helper function to create a test resolver with common overrides
-fn create_test_resolver() -> MvrResolver {
-    let overrides = MvrOverrides::new()
-        .with_package("@suifrens/core".to_string(), "0x123456789".to_string())
-        .with_package("@suifrens/accessories".to_string(), "0x987654321".to_string())
-        .with_type("@suifrens/core::suifren::SuiFren".to_string(), 
-                   "0x123456789::suifren::SuiFren".to_string())
-        .with_type("@suifrens/core::bullshark::Bullshark".to_string(), 
-                   "0x123456789::bullshark::Bullshark".to_string());
-
-    MvrResolver::testnet().with_overrides(overrides)
-}
-
-#[tokio::test]
-async fn test_comprehensive_workflow() {
-    let resolver = create_test_resolver();
-
-    // Test individual package resolution
-    let core_pkg = resolver.resolve_package("@suifrens/core").await.unwrap();
-    assert_eq!(core_pkg, "0x123456789");
-
-    // Test individual type resolution
-    let suifren_type = resolver.resolve_type("@suifrens/core::suifren::SuiFren").await.unwrap();
-    assert_eq!(suifren_type, "0x123456789::suifren::SuiFren");
-
-    // Test batch operations
-    let packages = vec!["@suifrens/core", "@suifrens/accessories"];
-    let batch_results = resolver.resolve_packages(&packages).await.unwrap();
-    assert_eq!(batch_results.len(), 2);
-
-    // Test cache statistics
-    let stats = resolver.cache_stats().unwrap();
-    assert!(stats.total_entries >= 0); // Should have some entries from resolutions
-
-    // Test cache cleanup
-    let cleaned = resolver.cleanup_expired_cache().unwrap();
-    assert!(cleaned >= 0); // Should not error
-}
-
-// Note: To run these tests with a real MVR server, you would need to:
-// 1. Set up environment variables for test endpoints
-// 2. Handle rate limiting and network timeouts appropriately
-// 3. Use actual package names that exist in the MVR registry
+// 4. Mock the HTTP client for deterministic testing

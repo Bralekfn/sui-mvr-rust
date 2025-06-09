@@ -1,5 +1,5 @@
 //! Example showing how to use static overrides
-//! 
+//!
 //! Run with: cargo run --example with_overrides
 
 use sui_mvr::prelude::*;
@@ -14,11 +14,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_package("@myapp/utils".to_string(), "0xfedcba987654321".to_string())
         .with_type(
             "@myapp/core::token::MyToken".to_string(),
-            "0x123456789abcdef::token::MyToken".to_string()
+            "0x123456789abcdef::token::MyToken".to_string(),
         )
         .with_type(
             "@myapp/core::nft::MyNFT".to_string(),
-            "0x123456789abcdef::nft::MyNFT<T>".to_string()
+            "0x123456789abcdef::nft::MyNFT<T>".to_string(),
         );
 
     println!("📝 Created overrides:");
@@ -64,12 +64,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match resolver.config().overrides.as_ref().unwrap().to_json() {
         Ok(json) => {
             println!("{}", json);
-            
+
             // Example of loading from JSON
             println!("\n📖 Loading overrides from JSON:");
             match MvrOverrides::from_json(&json) {
-                Ok(loaded) => println!("✓ Successfully loaded {} packages and {} types", 
-                                     loaded.packages.len(), loaded.types.len()),
+                Ok(loaded) => println!(
+                    "✓ Successfully loaded {} packages and {} types",
+                    loaded.packages.len(),
+                    loaded.types.len()
+                ),
                 Err(e) => println!("✗ Failed to load from JSON: {}", e),
             }
         }
