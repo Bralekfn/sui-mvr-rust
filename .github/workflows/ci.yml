@@ -42,20 +42,33 @@ jobs:
     - name: Check formatting
       run: cargo fmt --all -- --check
       
-    - name: Run clippy
+    - name: Run clippy (default features)
+      run: cargo clippy --all-targets -- -D warnings
+      
+    - name: Run clippy (all features)
       run: cargo clippy --all-targets --all-features -- -D warnings
       
-    - name: Run tests
+    - name: Run tests (default features)
+      run: cargo test --verbose
+      
+    - name: Run tests (all features)
       run: cargo test --verbose --all-features
       
-    - name: Run doctests
+    - name: Run doctests (default features)
+      run: cargo test --doc
+      
+    - name: Run doctests (all features)
       run: cargo test --doc --all-features
       
-    - name: Test examples
+    - name: Test examples (basic)
       run: |
         cargo check --example basic_usage
         cargo check --example with_overrides
         cargo check --example batch_operations
+
+    - name: Test examples (with Sui integration)
+      run: |
+        cargo check --example sui_integration --features sui-integration
 
   coverage:
     name: Code Coverage
@@ -71,8 +84,11 @@ jobs:
     - name: Install cargo-tarpaulin
       run: cargo install cargo-tarpaulin
       
-    - name: Generate coverage report
-      run: cargo tarpaulin --all-features --out xml
+    - name: Generate coverage report (default features)
+      run: cargo tarpaulin --out xml --output-dir coverage/
+      
+    - name: Generate coverage report (all features)
+      run: cargo tarpaulin --all-features --out xml --output-dir coverage-all/
       
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -107,7 +123,12 @@ jobs:
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
         
-    - name: Check documentation
+    - name: Check documentation (default features)
+      run: cargo doc --no-deps
+      env:
+        RUSTDOCFLAGS: -D warnings
+
+    - name: Check documentation (all features)
       run: cargo doc --no-deps --all-features
       env:
         RUSTDOCFLAGS: -D warnings
@@ -126,7 +147,7 @@ jobs:
     - name: Check if publishable
       run: cargo publish --dry-run
 
-  # Optional: Performance benchmarks (only run on main branch)
+  # Performance benchmarks (only run on main branch)
   benchmarks:
     name: Performance Benchmarks
     runs-on: ubuntu-latest
@@ -141,3 +162,235 @@ jobs:
         
     - name: Run benchmarks
       run: cargo bench --no-run  # Just check that benchmarks compile
+
+  # Integration tests with Sui SDK
+  sui-integration:
+    name: Sui SDK Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+        
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-sui-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-sui-cargo-
+          ${{ runner.os }}-cargo-
+        
+    - name: Run Sui integration tests
+      run: cargo test --features sui-integration --test sui_integration_tests
+      
+    - name: Run Sui integration example
+      run: cargo run --example sui_integration --features sui-integration
+      
+    - name: Check production example compilation
+      run: cargo check --bin production_example --features sui-integration
+
+  # Feature combination testing
+  feature-combinations:
+    name: Feature Combination Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        features:
+          - ""
+          - "tracing"
+          - "metrics"
+          - "sui-integration"
+          - "tracing,metrics"
+          - "sui-integration,tracing"
+          - "sui-integration,metrics"
+          - "sui-integration,tracing,metrics"
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: Test feature combination
+      run: |
+        if [ -z "${{ matrix.features }}" ]; then
+          cargo test --no-default-features
+        else
+          cargo test --no-default-features --features "${{ matrix.features }}"
+        fi
+
+  # Minimum Supported Rust Version (MSRV) check
+  msrv-check:
+    name: MSRV Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    
+    - name: Install MSRV Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: 1.82.0
+        
+    - name: Check MSRV compilation
+      run: cargo check --all-features
+      
+    - name: Run MSRV tests
+      run: cargo test --all-features
+
+  # Example verification
+  examples:
+    name: Example Verification
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: Run basic usage example
+      run: cargo run --example basic_usage
+      
+    - name: Run overrides example
+      run: cargo run --example with_overrides
+      
+    - name: Run batch operations example
+      run: cargo run --example batch_operations
+      
+    - name: Run Sui integration example (with feature)
+      run: cargo run --example sui_integration --features sui-integration
+
+  # Cross-platform testing
+  cross-platform:
+    name: Cross Platform Tests
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable]
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ matrix.rust }}
+        
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-${{ matrix.rust }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.rust }}-cargo-
+        
+    - name: Run tests (default features)
+      run: cargo test --verbose
+      
+    - name: Run tests (all features)
+      run: cargo test --verbose --all-features
+
+  # WebAssembly compilation check
+  wasm-check:
+    name: WebAssembly Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: wasm32-unknown-unknown
+        
+    - name: Check WASM compilation (without sui-integration)
+      run: cargo check --target wasm32-unknown-unknown --features wasm
+      
+    # Note: sui-integration feature is not compatible with WASM
+    # as the Sui SDK doesn't support WASM compilation yet
+
+  # Documentation deployment (only on main)
+  docs-deploy:
+    name: Deploy Documentation
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [test, docs]
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: Build documentation
+      run: cargo doc --all-features --no-deps
+      env:
+        RUSTDOCFLAGS: --cfg docsrs
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./target/doc
+        
+  # Release preparation check
+  release-check:
+    name: Release Preparation Check
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+        
+    - name: Verify version consistency
+      run: |
+        CARGO_VERSION=$(cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="sui-mvr") | .version')
+        TAG_VERSION=${GITHUB_REF#refs/tags/v}
+        if [ "$CARGO_VERSION" != "$TAG_VERSION" ]; then
+          echo "Version mismatch: Cargo.toml has $CARGO_VERSION, tag is $TAG_VERSION"
+          exit 1
+        fi
+        
+    - name: Check changelog entry
+      run: |
+        if ! grep -q "## \[$TAG_VERSION\]" CHANGELOG.MD; then
+          echo "No changelog entry found for version $TAG_VERSION"
+          exit 1
+        fi
+        
+    - name: Run full test suite
+      run: cargo test --all-features
+      
+    - name: Check documentation
+      run: cargo doc --all-features --no-deps
+      
+    - name: Verify examples work
+      run: |
+        cargo run --example basic_usage
+        cargo run --example sui_integration --features sui-integration

@@ -48,12 +48,19 @@ futures = "0.3"
 tracing = { version = "0.1", optional = true }
 tracing-subscriber = { version = "0.3", optional = true }
 
+# Official Sui SDK integration (optional feature)
+sui-sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk", optional = true }
+
 [dev-dependencies]
 # Testing utilities
 tokio-test = "0.4"
 criterion = { version = "0.5", features = ["html_reports"] }
 mockito = "1.2"
 tempfile = "3.8"
+anyhow = "1.0"
+
+# Sui SDK for examples and integration tests
+sui-sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk" }
 
 # Additional test utilities
 futures = "0.3"
@@ -74,6 +81,9 @@ metrics = []
 # Feature for WebAssembly support - reqwest automatically handles WASM targets
 wasm = []
 
+# Feature for Sui SDK integration
+sui-integration = ["dep:sui-sdk"]
+
 [[example]]
 name = "basic_usage"
 required-features = []
@@ -85,6 +95,14 @@ required-features = []
 [[example]]
 name = "batch_operations"
 required-features = []
+
+[[example]]
+name = "sui_integration"
+required-features = ["sui-integration"]
+
+[[example]]
+name = "production_usage"
+required-features = ["sui-integration"]
 
 [[bench]]
 name = "resolver_bench"

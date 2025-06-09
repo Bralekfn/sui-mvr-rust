@@ -18,8 +18,9 @@ Transform cryptic package addresses into human-readable names in your Rust appli
 - ✓ Package and type resolution with caching
 - ✓ Batch operations for performance  
 - ✓ Static overrides for development
+- ✓ **Official Sui SDK integration**
 - ✓ Comprehensive error handling
-- ✓ Three working examples
+- ✓ Four working examples including full Sui integration
 
 ### 🔄 **Ongoing Improvements:**
 - Expanding test coverage (currently ~50%)
@@ -38,10 +39,13 @@ Transform cryptic package addresses into human-readable names in your Rust appli
 - 🚨 **Comprehensive Errors**: Detailed error types with retry logic
 - 🔄 **Async/Await**: Non-blocking operations with tokio
 - 📊 **Performance Metrics**: Cache statistics and monitoring
+- **🆕 Sui SDK Integration**: Works seamlessly with official Sui Rust SDK
 
 ## 🚀 Quick Start
 
-Add this to your `Cargo.toml`:
+### Basic Setup
+
+Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -49,7 +53,7 @@ sui-mvr = "0.1.0"
 tokio = { version = "1.0", features = ["full"] }
 ```
 
-Basic usage:
+### Standalone Usage
 
 ```rust
 use sui_mvr::prelude::*;
@@ -66,6 +70,60 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Resolve a type name
     let type_sig = resolver.resolve_type("@suifrens/core::suifren::SuiFren").await?;
     println!("SuiFren type: {}", type_sig);
+    
+    Ok(())
+}
+```
+
+### **🆕 Integration with Official Sui SDK**
+
+For building transactions with human-readable package names:
+
+```toml
+[dependencies]
+sui-mvr = { version = "0.1.0", features = ["sui-integration"] }
+sui-sdk = { git = "https://github.com/mystenlabs/sui", package = "sui-sdk" }
+tokio = { version = "1.2", features = ["full"] }
+anyhow = "1.0"
+```
+
+```rust
+use anyhow::Result;
+use sui_mvr::prelude::*;
+use sui_sdk::{
+    types::{
+        base_types::ObjectID,
+        programmable_transaction_builder::ProgrammableTransactionBuilder,
+        transaction::{Command, ProgrammableMoveCall},
+        Identifier,
+    },
+    SuiClientBuilder,
+};
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Initialize official Sui client
+    let sui_client = SuiClientBuilder::default().build_testnet().await?;
+    println!("Connected to Sui testnet: {}", sui_client.api_version());
+
+    // Create MVR resolver
+    let mvr_resolver = MvrResolver::testnet();
+    
+    // Resolve package address using human-readable name
+    let package_address = mvr_resolver.resolve_package("@suifrens/core").await?;
+    let package_id = ObjectID::from_hex_literal(&package_address)?;
+    
+    // Build transaction with resolved address
+    let mut ptb = ProgrammableTransactionBuilder::new();
+    ptb.command(Command::MoveCall(Box::new(ProgrammableMoveCall {
+        package: package_id,
+        module: Identifier::new("mint")?,
+        function: Identifier::new("new_suifren")?,
+        type_arguments: vec![],
+        arguments: vec![],
+    })));
+    
+    println!("✅ Transaction built using '@suifrens/core' -> {}", package_id);
     
     Ok(())
 }
@@ -91,7 +149,6 @@ let resolver = MvrResolver::new(config);
 
 ```rust
 use sui_mvr::*;
-use std::collections::HashMap;
 
 // Perfect for local development and CI
 let overrides = MvrOverrides::new()
@@ -114,53 +171,34 @@ let results = resolver.resolve_packages(&package_names).await?;
 for (name, address) in results {
     println!("{} -> {}", name, address);
 }
-
-// Batch type resolution
-let type_names = vec![
-    "@suifrens/core::suifren::SuiFren",
-    "@suifrens/core::bullshark::Bullshark"
-];
-let type_results = resolver.resolve_types(&type_names).await?;
 ```
 
-### Error Handling with Fallbacks
+### **🆕 Helper Functions for Sui Integration**
 
 ```rust
-use sui_mvr::MvrError;
-
-match resolver.resolve_package("@myapp/core").await {
-    Ok(address) => println!("✓ Resolved: {}", address),
-    Err(MvrError::PackageNotFound(name)) => {
-        println!("Package {} not found, using fallback", name);
-        // Use fallback address
-    }
-    Err(MvrError::RateLimitExceeded { retry_after_secs }) => {
-        println!("Rate limited, retry in {} seconds", retry_after_secs);
-        tokio::time::sleep(Duration::from_secs(retry_after_secs)).await;
-        // Retry logic
-    }
-    Err(e) if e.is_retryable() => {
-        println!("Retryable error: {}", e);
-        // Implement retry with exponential backoff
-    }
-    Err(e) => println!("Permanent error: {}", e),
+/// Resolve MVR target format for move calls
+/// "@package::module::function" -> (ObjectID, "module", "function")
+pub async fn resolve_mvr_target(
+    resolver: &MvrResolver, 
+    target: &str
+) -> Result<(ObjectID, String, String)> {
+    // Implementation handles "@package::module::function" format
 }
-```
 
-### Cache Management
-
-```rust
-// Get cache statistics
-let stats = resolver.cache_stats()?;
-println!("Cache utilization: {:.1}%", stats.utilization() * 100.0);
-println!("Hit rate: {:.1}%", stats.hit_rate() * 100.0);
-
-// Cleanup expired entries
-let removed = resolver.cleanup_expired_cache()?;
-println!("Cleaned up {} expired entries", removed);
-
-// Clear entire cache
-resolver.clear_cache()?;
+/// Build transaction with MVR-resolved package
+async fn build_mvr_transaction(
+    resolver: &MvrResolver,
+    package_name: &str,
+    module: &str,
+    function: &str,
+) -> Result<ProgrammableTransactionBuilder> {
+    let package_address = resolver.resolve_package(package_name).await?;
+    let package_id = ObjectID::from_hex_literal(&package_address)?;
+    
+    let mut ptb = ProgrammableTransactionBuilder::new();
+    // ... build transaction with resolved package_id
+    Ok(ptb)
+}
 ```
 
 ## 📊 Performance Comparison
@@ -179,6 +217,7 @@ resolver.clear_cache()?;
 | Type Resolution | ✅ | ✅ |
 | Basic Caching | ✅ | ✅ |
 | Static Overrides | ✅ | ✅ |
+| **Official SDK Integration** | ✅ | **✅ NEW** |
 | Batch Resolution | ❌ | ✅ |
 | Cache Statistics | ❌ | ✅ |
 | Configurable TTL | ❌ | ✅ |
@@ -201,40 +240,33 @@ let custom = MvrConfig::default()
     .with_endpoint("https://my-mvr-endpoint.com".to_string());
 ```
 
-### Cache Settings
+### Features
 
-```rust
-let config = MvrConfig::mainnet()
-    .with_cache_ttl(Duration::from_secs(3600))  // 1 hour
-    .with_timeout(Duration::from_secs(30));     // 30 seconds
+```toml
+[dependencies]
+sui-mvr = { version = "0.1.0", features = ["sui-integration", "tracing"] }
 ```
 
-### Overrides from JSON
-
-```rust
-// Save overrides
-let json = overrides.to_json()?;
-std::fs::write("overrides.json", json)?;
-
-// Load overrides
-let json = std::fs::read_to_string("overrides.json")?;
-let overrides = MvrOverrides::from_json(&json)?;
-let resolver = MvrResolver::testnet().with_overrides(overrides);
-```
+Available features:
+- `sui-integration` - Official Sui SDK integration helpers
+- `tracing` - Detailed logging and tracing
+- `static-resolution` - Compile-time resolution (planned)
+- `metrics` - Additional metrics and monitoring
+- `wasm` - WebAssembly support
 
 ## 📚 Examples
 
 Check out the [examples directory](./examples/) for complete working examples:
 
 - **[basic_usage.rs](./examples/basic_usage.rs)** - Simple resolver usage
-- **[with_overrides.rs](./examples/with_overrides.rs)** - Static overrides for local development
-- **[batch_operations.rs](./examples/batch_operations.rs)** - Batch resolution and performance testing
+- **[with_overrides.rs](./examples/with_overrides.rs)** - Static overrides for development
+- **[batch_operations.rs](./examples/batch_operations.rs)** - Batch resolution and performance
+- **🆕 [sui_integration.rs](./examples/sui_integration.rs)** - **Full Sui SDK integration**
 
 Run examples with:
 ```bash
 cargo run --example basic_usage
-cargo run --example with_overrides
-cargo run --example batch_operations
+cargo run --example sui_integration --features sui-integration
 ```
 
 ## 🧪 Testing
@@ -243,12 +275,15 @@ cargo run --example batch_operations
 # Run all tests
 cargo test
 
+# Test with Sui integration
+cargo test --features sui-integration
+
 # Run with coverage
 cargo install cargo-tarpaulin
 cargo tarpaulin --all-features
 
 # Test examples
-cargo run --example basic_usage
+cargo run --example sui_integration --features sui-integration
 ```
 
 ## 🚀 Performance Tips
@@ -258,36 +293,33 @@ cargo run --example basic_usage
 3. **Use static overrides** for known packages in production
 4. **Configure appropriate timeouts** for your network conditions
 5. **Monitor cache hit rates** to optimize cache size
+6. **🆕 Use official Sui SDK integration** for optimal transaction building
 
 ## 🛡️ Error Handling
 
-The crate provides comprehensive error types:
-
 ```rust
-pub enum MvrError {
-    PackageNotFound(String),           // 404 errors
-    TypeNotFound(String),              // Type resolution failures
-    RateLimitExceeded { retry_after_secs: u64 }, // 429 errors
-    Timeout { timeout_secs: u64 },     // Network timeouts
-    ServerError { status_code: u16, message: String }, // 5xx errors
-    InvalidPackageName(String),        // Validation errors
-    InvalidTypeName(String),           // Format errors
-    HttpError(reqwest::Error),         // Network errors
-    JsonError(serde_json::Error),      // Parsing errors
-    CacheError(String),                // Cache operations
-    ConfigError(String),               // Configuration issues
+use sui_mvr::MvrError;
+
+match resolver.resolve_package("@myapp/core").await {
+    Ok(address) => println!("✓ Resolved: {}", address),
+    Err(MvrError::PackageNotFound(name)) => {
+        println!("Package {} not found, using fallback", name);
+    }
+    Err(MvrError::RateLimitExceeded { retry_after_secs }) => {
+        tokio::time::sleep(Duration::from_secs(retry_after_secs)).await;
+        // Retry logic
+    }
+    Err(e) if e.is_retryable() => {
+        // Implement retry with exponential backoff
+    }
+    Err(e) => println!("Permanent error: {}", e),
 }
 ```
 
-Each error type provides:
-- **Retry logic**: `error.is_retryable()`
-- **Rate limiting**: `error.is_rate_limited()`
-- **Retry delays**: `error.retry_delay()`
-
 ## 🗺️ Roadmap
 
-- [ ] **Static Resolution** - Compile-time package resolution (like @mysten/mvr-static)
-- [ ] **Official Sui SDK Integration** - Direct integration with sui-sdk
+- [x] **Official Sui SDK Integration** - ✅ **COMPLETED in v0.1.0**
+- [ ] **Static Resolution** - Compile-time package resolution
 - [ ] **WebAssembly Support** - Run in browsers and edge environments
 - [ ] **Metrics & Observability** - Prometheus metrics and tracing
 - [ ] **CLI Tool** - Command-line MVR operations
@@ -295,13 +327,7 @@ Each error type provides:
 
 ## 🤝 Contributing
 
-We love contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details on:
-
-- 🐛 Reporting bugs
-- ✨ Requesting features  
-- 🔧 Setting up development environment
-- 📝 Code style and testing guidelines
-- 🚀 Release process
+We love contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
 
 ## 📄 License
 
@@ -311,6 +337,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 - **Inspired by** the [TypeScript MVR plugin](https://docs.suins.io/move-registry/tooling/typescript-sdk) from Mysten Labs
 - **Built for** the [Sui blockchain](https://sui.io/) ecosystem  
+- **Integrates with** the [official Sui Rust SDK](https://docs.sui.io/references/rust-sdk)
 - **Thanks to** the Move Registry team for creating MVR
 
 ## 📞 Support & Community
