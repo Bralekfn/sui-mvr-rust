@@ -10,6 +10,23 @@
 
 Transform cryptic package addresses into human-readable names in your Rust applications. No more copy-pasting `0x80d7de9c4a56194087e0ba0bf59492aa8e6a5ee881606226930827085ddf2332` - just use `@suifrens/core`!
 
+## 🚧 Current Status
+
+**Early Release (v0.1.0)** - This is the first Rust implementation of MVR for Sui. Core functionality is stable and tested.
+
+### ✅ **What's Ready:**
+- ✓ Package and type resolution with caching
+- ✓ Batch operations for performance  
+- ✓ Static overrides for development
+- ✓ Comprehensive error handling
+- ✓ Three working examples
+
+### 🔄 **Ongoing Improvements:**
+- Expanding test coverage (currently ~50%)
+- Additional edge case handling  
+- Performance optimizations
+- WASM and static resolution features
+
 ## ✨ Features
 
 - 🔍 **Package Resolution**: `@suifrens/core` → `0x123...`
