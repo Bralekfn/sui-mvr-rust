@@ -82,7 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 individual_duration,
                 package_names.len()
             );
-            println!("   Batch resolution: {:?} (1 request)", batch_duration);
+            println!("   Batch resolution: {batch_duration:?} (1 request)");
 
             if batch_duration < individual_duration {
                 let speedup =
@@ -108,7 +108,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Demonstrate cache cleanup
     println!("\n🧹 Cache maintenance:");
     match resolver.cleanup_expired_cache() {
-        Ok(removed) => println!("   Cleaned up {} expired entries", removed),
+        Ok(removed) => println!("   Cleaned up {removed} expired entries"),
         Err(e) => println!("✗ Cache cleanup failed: {}", e),
     }
 
@@ -118,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     for &invalid in &invalid_names {
         match resolver.resolve_package(invalid).await {
-            Ok(_) => println!("   Unexpected success for: {}", invalid),
+            Ok(_) => println!("   Unexpected success for: {invalid}"),
             Err(e) => println!("   ✓ Correctly rejected '{}': {}", invalid, e),
         }
     }

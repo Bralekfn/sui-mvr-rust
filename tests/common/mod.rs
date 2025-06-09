@@ -135,7 +135,7 @@ pub fn assert_valid_type_signature(type_sig: &str) {
 
     // Should start with 0x address
     if !type_sig.starts_with("0x") {
-        panic!("Type signature should start with address: {}", type_sig);
+        panic!("Type signature should start with address: {type_sig}");
     }
 
     // Should have at least module::Type format after address
