@@ -32,32 +32,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // These will use the overrides instead of making API calls
     match resolver.resolve_package("@myapp/core").await {
-        Ok(address) => println!("✓ MyApp core package: {} (from override)", address),
-        Err(e) => println!("✗ Failed to resolve MyApp core: {}", e),
+        Ok(address) => println!("✓ MyApp core package: {address} (from override)"),
+        Err(e) => println!("✗ Failed to resolve MyApp core: {e}"),
     }
 
     match resolver.resolve_package("@myapp/utils").await {
-        Ok(address) => println!("✓ MyApp utils package: {} (from override)", address),
-        Err(e) => println!("✗ Failed to resolve MyApp utils: {}", e),
+        Ok(address) => println!("✓ MyApp utils package: {address} (from override)"),
+        Err(e) => println!("✗ Failed to resolve MyApp utils: {e}"),
     }
 
     println!("\n🏷️ Resolving types (using overrides)...");
 
     match resolver.resolve_type("@myapp/core::token::MyToken").await {
-        Ok(type_sig) => println!("✓ MyToken type: {} (from override)", type_sig),
-        Err(e) => println!("✗ Failed to resolve MyToken type: {}", e),
+        Ok(type_sig) => println!("✓ MyToken type: {type_sig} (from override)"),
+        Err(e) => println!("✗ Failed to resolve MyToken type: {e}"),
     }
 
     match resolver.resolve_type("@myapp/core::nft::MyNFT").await {
-        Ok(type_sig) => println!("✓ MyNFT type: {} (from override)", type_sig),
-        Err(e) => println!("✗ Failed to resolve MyNFT type: {}", e),
+        Ok(type_sig) => println!("✓ MyNFT type: {type_sig} (from override)"),
+        Err(e) => println!("✗ Failed to resolve MyNFT type: {e}"),
     }
 
     // This will try to fetch from API since it's not in overrides
     println!("\n🌐 Resolving from API (not in overrides)...");
     match resolver.resolve_package("@suifrens/core").await {
-        Ok(address) => println!("✓ SuiFrens core package: {} (from API)", address),
-        Err(e) => println!("✗ Failed to resolve SuiFrens core: {}", e),
+        Ok(address) => println!("✓ SuiFrens core package: {address} (from API)"),
+        Err(e) => println!("✗ Failed to resolve SuiFrens core: {e}"),
     }
 
     println!("\n💾 Saving overrides to JSON:");
@@ -73,10 +73,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     loaded.packages.len(),
                     loaded.types.len()
                 ),
-                Err(e) => println!("✗ Failed to load from JSON: {}", e),
+                Err(e) => println!("✗ Failed to load from JSON: {e}"),
             }
         }
-        Err(e) => println!("✗ Failed to serialize to JSON: {}", e),
+        Err(e) => println!("✗ Failed to serialize to JSON: {e}"),
     }
 
     println!("\n🎉 Overrides example completed!");

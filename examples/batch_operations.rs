@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("   {name} -> {address}");
             }
         }
-        Err(e) => println!("✗ Batch package resolution failed: {}", e),
+        Err(e) => println!("✗ Batch package resolution failed: {e}"),
     }
 
     println!("\n🏷️ Batch resolving {} types...", type_names.len());
@@ -53,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("   {name} -> {type_sig}");
             }
         }
-        Err(e) => println!("✗ Batch type resolution failed: {}", e),
+        Err(e) => println!("✗ Batch type resolution failed: {e}"),
     }
 
     // Compare with individual resolution
@@ -65,7 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for &name in &package_names {
         match resolver.resolve_package(name).await {
             Ok(address) => individual_results.push((name, address)),
-            Err(e) => println!("✗ Failed to resolve {}: {}", name, e),
+            Err(e) => println!("✗ Failed to resolve {name}: {e}"),
         }
     }
     let individual_duration = start.elapsed();
@@ -87,10 +87,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if batch_duration < individual_duration {
                 let speedup =
                     individual_duration.as_millis() as f64 / batch_duration.as_millis() as f64;
-                println!("   🚀 Batch is {:.1}x faster!", speedup);
+                println!("   🚀 Batch is {speedup:.1}x faster!");
             }
         }
-        Err(e) => println!("✗ Fresh batch resolution failed: {}", e),
+        Err(e) => println!("✗ Fresh batch resolution failed: {e}"),
     }
 
     // Cache statistics
@@ -102,14 +102,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("   Hit rate: {:.1}%", stats.hit_rate() * 100.0);
             println!("   Utilization: {:.1}%", stats.utilization() * 100.0);
         }
-        Err(e) => println!("✗ Failed to get cache stats: {}", e),
+        Err(e) => println!("✗ Failed to get cache stats: {e}"),
     }
 
     // Demonstrate cache cleanup
     println!("\n🧹 Cache maintenance:");
     match resolver.cleanup_expired_cache() {
         Ok(removed) => println!("   Cleaned up {removed} expired entries"),
-        Err(e) => println!("✗ Cache cleanup failed: {}", e),
+        Err(e) => println!("✗ Cache cleanup failed: {e}"),
     }
 
     // Test error handling with invalid names
@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for &invalid in &invalid_names {
         match resolver.resolve_package(invalid).await {
             Ok(_) => println!("   Unexpected success for: {invalid}"),
-            Err(e) => println!("   ✓ Correctly rejected '{}': {}", invalid, e),
+            Err(e) => println!("   ✓ Correctly rejected '{invalid}': {e}"),
         }
     }
 
