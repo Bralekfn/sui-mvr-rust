@@ -6,11 +6,15 @@
 //! ## Quick Start
 //!
 //! ```rust
-//! use sui_mvr::MvrResolver;
+//! use sui_mvr::{MvrResolver, MvrOverrides};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let resolver = MvrResolver::mainnet();
+//!     // For this example, we'll use static overrides instead of real API calls
+//!     let overrides = MvrOverrides::new()
+//!         .with_package("@suifrens/core".to_string(), "0x123456789".to_string());
+//!     
+//!     let resolver = MvrResolver::mainnet().with_overrides(overrides);
 //!     let address = resolver.resolve_package("@suifrens/core").await?;
 //!     println!("Package address: {}", address);
 //!     Ok(())

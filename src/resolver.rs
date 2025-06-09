@@ -452,8 +452,8 @@ pub async fn resolve_mvr_target(resolver: &MvrResolver, target: &str) -> MvrResu
         return Ok(target.to_string());
     }
 
-    // Parse MVR target format: @package/module::function
-    let parts: Vec<&str> = target.splitn(2, '/').collect();
+    // Parse MVR target format: @package::module::function
+    let parts: Vec<&str> = target.splitn(2, "::").collect();
     if parts.len() != 2 {
         return Err(MvrError::InvalidPackageName(target.to_string()));
     }
@@ -462,7 +462,7 @@ pub async fn resolve_mvr_target(resolver: &MvrResolver, target: &str) -> MvrResu
     let module_function = parts[1];
 
     let package_address = resolver.resolve_package(package_part).await?;
-    Ok(format!("{}::{}", package_address, module_function))
+    Ok(format!("{package_address}::{module_function}"))
 }
 
 #[cfg(test)]

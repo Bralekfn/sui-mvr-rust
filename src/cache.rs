@@ -121,7 +121,7 @@ impl MvrCache {
             .filter(|(_, entry)| entry.is_expired())
             .count();
 
-        let total_hits: u64 = entries.iter().map(|(_, entry)| entry.hit_count).sum();
+        let total_hits: u64 = entries.values().map(|entry| entry.hit_count).sum();
 
         Ok(CacheStats {
             total_entries,
@@ -161,12 +161,12 @@ impl MvrCache {
 
     /// Create cache key for package resolution
     pub fn package_key(package_name: &str) -> String {
-        format!("pkg:{}", package_name)
+        format!("pkg:{package_name}")
     }
 
     /// Create cache key for type resolution
     pub fn type_key(type_name: &str) -> String {
-        format!("type:{}", type_name)
+        format!("type:{type_name}")
     }
 }
 

@@ -19,7 +19,7 @@ pub fn create_test_resolver() -> MvrResolver {
             "0x123456789::bullshark::Bullshark".to_string(),
         )
         .with_type(
-            "@test/package::TestType".to_string(),
+            "@test/package::module::TestType".to_string(), // Fixed: added module part
             "0x111111111::module::TestType".to_string(),
         );
 
@@ -37,15 +37,15 @@ pub fn create_batch_test_overrides() -> MvrOverrides {
 
     let mut types = HashMap::new();
     types.insert(
-        "@batch/pkg1::Type1".to_string(),
+        "@batch/pkg1::module::Type1".to_string(), // Fixed: added module part
         "0x111::module::Type1".to_string(),
     );
     types.insert(
-        "@batch/pkg2::Type2".to_string(),
+        "@batch/pkg2::module::Type2".to_string(), // Fixed: added module part
         "0x222::module::Type2".to_string(),
     );
     types.insert(
-        "@batch/pkg3::Type3".to_string(),
+        "@batch/pkg3::module::Type3".to_string(), // Fixed: added module part
         "0x333::module::Type3".to_string(),
     );
 
@@ -71,7 +71,7 @@ pub fn invalid_type_names() -> Vec<&'static str> {
     vec![
         "invalid-type",         // Missing @
         "@ns/pkg",              // Missing ::
-        "@ns/pkg::Type",        // Not enough parts
+        "@ns/pkg::Type",        // Not enough parts (missing module)
         "ns/pkg::module::Type", // Missing @
         "@ns/pkg:Type",         // Wrong separator
         "@ns/pkg::module:",     // Empty type name

@@ -47,7 +47,7 @@ async fn test_static_overrides() {
 
     // Type resolution should use override
     let result = resolver
-        .resolve_type("@test/package::TestType")
+        .resolve_type("@test/package::module::TestType")
         .await
         .unwrap();
     assert_eq!(result, "0x111111111::module::TestType");
@@ -89,16 +89,16 @@ async fn test_batch_operations() {
     }
 
     // Test batch type resolution
-    let type_names = vec!["@batch/pkg1::Type1", "@batch/pkg2::Type2"];
+    let type_names = vec!["@batch/pkg1::module::Type1", "@batch/pkg2::module::Type2"];
     let results = resolver.resolve_types(&type_names).await.unwrap();
 
     assert_eq!(results.len(), 2);
     assert_eq!(
-        results.get("@batch/pkg1::Type1"),
+        results.get("@batch/pkg1::module::Type1"),
         Some(&"0x111::module::Type1".to_string())
     );
     assert_eq!(
-        results.get("@batch/pkg2::Type2"),
+        results.get("@batch/pkg2::module::Type2"),
         Some(&"0x222::module::Type2".to_string())
     );
 
@@ -138,13 +138,24 @@ async fn test_package_name_validation() {
     let resolver_with_overrides = create_test_resolver();
     for valid_name in valid_package_names() {
         // If it's in our test overrides, it should succeed
-        if valid_name == "@suifrens/core" || valid_name == "@test/pkg" {
+        if valid_name == "@suifrens/core" || valid_name == "@test/package" {
             let result = resolver_with_overrides.resolve_package(valid_name).await;
             assert!(
                 result.is_ok(),
                 "Should accept valid package name: {}",
                 valid_name
             );
+        } else {
+            // For names not in overrides, just test that validation passes
+            // by checking that the error is NOT InvalidPackageName
+            let result = resolver_with_overrides.resolve_package(valid_name).await;
+            if let Err(e) = result {
+                assert!(
+                    !matches!(e, MvrError::InvalidPackageName(_)),
+                    "Should not reject valid package name format: {}",
+                    valid_name
+                );
+            }
         }
     }
 }
@@ -188,7 +199,7 @@ async fn test_mvr_target_resolution() {
     assert_eq!(result, normal_target);
 
     // Test MVR target resolution
-    let mvr_target = "@test/package/module::function";
+    let mvr_target = "@test/package::module::function";
     let result = resolve_mvr_target(&resolver, mvr_target).await.unwrap();
     assert_eq!(result, "0x111111111::module::function");
 
@@ -260,7 +271,7 @@ async fn test_error_types_and_properties() {
     let rate_limited = MvrError::RateLimitExceeded {
         retry_after_secs: 60,
     };
-    test_error_properties(&rate_limited, true, false);
+    test_error_properties(&rate_limited, true, false); // Rate limits are retryable
     assert!(rate_limited.is_rate_limited());
     assert_eq!(rate_limited.retry_delay(), Some(Duration::from_secs(60)));
 

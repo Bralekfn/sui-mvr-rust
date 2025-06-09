@@ -56,6 +56,7 @@ impl MvrError {
         match self {
             MvrError::HttpError(_) => true,
             MvrError::Timeout { .. } => true,
+            MvrError::RateLimitExceeded { .. } => true, // Rate limits are retryable after waiting
             MvrError::ServerError { status_code, .. } => *status_code >= 500,
             _ => false,
         }
@@ -127,7 +128,7 @@ pub(crate) fn validate_type_name(name: &str) -> MvrResult<()> {
         return Err(MvrError::InvalidTypeName(name.to_string()));
     }
 
-    // Basic validation - could be more sophisticated
+    // Split on :: to get parts
     let parts: Vec<&str> = name.split("::").collect();
     if parts.len() < 3 {
         return Err(MvrError::InvalidTypeName(name.to_string()));
@@ -135,6 +136,13 @@ pub(crate) fn validate_type_name(name: &str) -> MvrResult<()> {
 
     // First part should be @namespace/package
     validate_package_name(parts[0])?;
+
+    // Remaining parts should be non-empty (module::Type)
+    for part in &parts[1..] {
+        if part.is_empty() {
+            return Err(MvrError::InvalidTypeName(name.to_string()));
+        }
+    }
 
     Ok(())
 }
@@ -148,6 +156,7 @@ mod tests {
         // Valid names
         assert!(validate_package_name("@suifrens/core").is_ok());
         assert!(validate_package_name("@namespace/package").is_ok());
+        assert!(validate_package_name("@test/pkg").is_ok());
 
         // Invalid names
         assert!(validate_package_name("suifrens/core").is_err()); // Missing @
@@ -161,11 +170,13 @@ mod tests {
         // Valid names
         assert!(validate_type_name("@suifrens/core::module::Type").is_ok());
         assert!(validate_type_name("@ns/pkg::mod::Type<T>").is_ok());
+        assert!(validate_type_name("@test/package::module::TestType").is_ok());
+        assert!(validate_type_name("@batch/pkg1::module::Type1").is_ok());
 
         // Invalid names
         assert!(validate_type_name("@suifrens/core").is_err()); // Missing ::
         assert!(validate_type_name("suifrens/core::Type").is_err()); // Missing @
-        assert!(validate_type_name("@ns/pkg::Type").is_err()); // Not enough parts
+        assert!(validate_type_name("@ns/pkg::Type").is_err()); // Not enough parts (missing module)
     }
 
     #[test]
@@ -182,6 +193,7 @@ mod tests {
             retry_after_secs: 60,
         };
         assert!(error.is_rate_limited());
+        assert!(error.is_retryable()); // Rate limits should be retryable
         assert_eq!(
             error.retry_delay(),
             Some(std::time::Duration::from_secs(60))
