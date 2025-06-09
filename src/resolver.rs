@@ -420,7 +420,7 @@ impl MvrResolver {
                 .ok_or_else(|| {
                     MvrError::JsonError(
                         serde_json::from_str::<serde_json::Value>(
-                            r#"{"error": "Address not found in response"}"#
+                            r#"{"error": "Address not found in response"}"#,
                         )
                         .unwrap_err(),
                     )
@@ -438,7 +438,7 @@ impl MvrResolver {
             .ok_or_else(|| {
                 MvrError::JsonError(
                     serde_json::from_str::<serde_json::Value>(
-                        r#"{"error": "Type signature not found in response"}"#
+                        r#"{"error": "Type signature not found in response"}"#,
                     )
                     .unwrap_err(),
                 )
