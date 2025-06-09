@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("\n💾 Saving overrides to JSON:");
     match resolver.config().overrides.as_ref().unwrap().to_json() {
         Ok(json) => {
-            println!("{}", json);
+            println!("{json}");
 
             // Example of loading from JSON
             println!("\n📖 Loading overrides from JSON:");
