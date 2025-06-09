@@ -362,4 +362,3 @@ async fn test_performance_comparison() {
 // 2. Use actual package names that exist in the registry
 // 3. Handle rate limiting and network timeouts
 // 4. Mock the HTTP client for deterministic testing
-

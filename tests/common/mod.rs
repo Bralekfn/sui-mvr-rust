@@ -207,4 +207,3 @@ mod tests {
         assert_eq!(result.unwrap(), "0x111111111");
     }
 }
-
